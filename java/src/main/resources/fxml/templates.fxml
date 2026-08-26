@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.TemplatesController"
+      spacing="16.0">
+    <HBox alignment="CENTER_LEFT" spacing="12.0">
+        <Label text="Quản lý Mẫu biểu (Templates &amp; Schemas)" styleClass="page-header"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="➕ Thêm mẫu biểu mới" onAction="#onImportTemplate" styleClass="btn-primary"/>
+        <Button text="Xóa mẫu biểu" onAction="#onDeleteTemplate" styleClass="btn-danger"/>
+    </HBox>
+
+    <TableView fx:id="templatesTable" prefHeight="260.0" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="Template ID" prefWidth="120.0"/>
+            <TableColumn fx:id="colName" text="Tên mẫu biểu" prefWidth="250.0"/>
+            <TableColumn fx:id="colType" text="Định dạng" prefWidth="100.0"/>
+            <TableColumn fx:id="colPath" text="Đường dẫn file" prefWidth="350.0"/>
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+    </TableView>
+
+    <VBox spacing="8.0" styleClass="card">
+        <Label text="Cấu trúc Schema &amp; Placeholders bóc tách từ mẫu biểu:" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+        <TableView fx:id="mappingTable" prefHeight="220.0" editable="true">
+            <columns>
+                <TableColumn fx:id="colTarget" text="Placeholder đích" prefWidth="190.0"/>
+                <TableColumn fx:id="colSource" text="Nguồn dữ liệu" prefWidth="260.0"/>
+                <TableColumn fx:id="colOrigin" text="Nguồn mapping" prefWidth="120.0"/>
+                <TableColumn fx:id="colConfidence" text="Tin cậy" prefWidth="90.0"/>
+            </columns>
+            <columnResizePolicy><TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/></columnResizePolicy>
+        </TableView>
+        <TitledPane text="Nâng cao: Schema JSON" expanded="false" animated="false">
+            <TextArea fx:id="schemaJsonArea" prefHeight="180.0" editable="true" wrapText="true"/>
+        </TitledPane>
+        <HBox alignment="CENTER_RIGHT" spacing="8.0">
+            <Label text="Kiểm tra mappings trước khi duyệt" style="-fx-text-fill: #64748b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Lưu và duyệt schema" onAction="#onApproveSchema" styleClass="btn-success"/>
+        </HBox>
+        <Label fx:id="statusLabel" text="Sẵn sàng" style="-fx-font-size: 11px; -fx-text-fill: #a5b4fc;"/>
+    </VBox>
+</VBox>

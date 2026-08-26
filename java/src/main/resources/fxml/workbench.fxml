@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.canvas.Canvas?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.WorkbenchController"
+      spacing="10.0">
+
+    <!-- Top Header Bar -->
+    <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="card" style="-fx-padding: 8 16;">
+        <Label text="Tài liệu:" style="-fx-font-weight: bold; -fx-text-fill: #475569;"/>
+        <ComboBox fx:id="docSelectorComboBox" prefWidth="300.0"/>
+        
+        <Button text="Bóc tách lại" onAction="#onReExtract" styleClass="btn-primary" maxWidth="140"/>
+
+        <Region HBox.hgrow="ALWAYS"/>
+
+        <HBox spacing="10.0" alignment="CENTER_RIGHT">
+            <Label text="PaddleOCR Latin/VN" styleClass="badge-tag" style="-fx-font-size: 11px; -fx-font-weight: bold;"/>
+            <Label fx:id="docStatusBadge" text="Status: -" styleClass="badge-tag-field" style="-fx-font-size: 11px;"/>
+            <Label fx:id="docConfidenceBadge" text="Confidence: -" styleClass="badge-conf" style="-fx-font-size: 11px;"/>
+        </HBox>
+    </HBox>
+
+    <!-- Main SplitPane (PaddleOCR AI Studio Style) -->
+    <SplitPane fx:id="mainSplitPane" dividerPositions="0.48" VBox.vgrow="ALWAYS">
+        <!-- ================= LEFT COLUMN: SOURCE DOCUMENT VIEWER ================= -->
+        <VBox spacing="0.0" styleClass="workbench-pane">
+            <!-- Left Toolbar: Clean, Compact, Responsive -->
+            <HBox alignment="CENTER_LEFT" spacing="6.0" styleClass="viewer-toolbar" style="-fx-padding: 6 10;">
+                <!-- Page Navigation -->
+                <Button text="◀" onAction="#onPrevPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Label fx:id="pageLabel" text="1 / 1" style="-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 11px;"/>
+                <Button text="›" onAction="#onNextPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+
+                <Separator orientation="VERTICAL" style="-fx-padding: 0 2;"/>
+
+                <!-- Zoom Controls -->
+                <Button text="−" onAction="#onZoomOut" styleClass="tool-btn" style="-fx-padding: 3 10;"/>
+                <Label fx:id="zoomLabel" text="100%" style="-fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-font-size: 11px; -fx-min-width: 42px; -fx-alignment: center;"/>
+                <Button text="+" onAction="#onZoomIn" styleClass="tool-btn" style="-fx-padding: 3 10;"/>
+
+                <Separator orientation="VERTICAL" style="-fx-padding: 0 2;"/>
+
+                <!-- Fit Options -->
+                <Button text="Vừa rộng" onAction="#onFitWidth" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Button text="Toàn trang" onAction="#onFitPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Button text="100%" onAction="#onZoomReset" styleClass="tool-btn" style="-fx-padding: 3 6;"/>
+
+                <Region HBox.hgrow="ALWAYS"/>
+
+                <CheckBox fx:id="showBboxesCheckbox" text="Hiện tất cả khung" selected="false" style="-fx-text-fill: #475569; -fx-font-size: 11px;"/>
+            </HBox>
+
+            <!-- Image & Bounding Boxes Canvas Area with Center Alignment -->
+            <ScrollPane fx:id="viewerScrollPane" fitToWidth="false" fitToHeight="false" VBox.vgrow="ALWAYS" style="-fx-background: #f1f5f9; -fx-padding: 8;">
+                <StackPane fx:id="viewerStackPane" alignment="TOP_CENTER" style="-fx-padding: 4;">
+                    <ImageView fx:id="pageImageView" preserveRatio="true" smooth="true"/>
+                    <Canvas fx:id="bboxCanvas"/>
+                </StackPane>
+            </ScrollPane>
+        </VBox>
+
+        <!-- ================= RIGHT COLUMN: PARSING & EDIT WORKSPACE ================= -->
+        <VBox spacing="0.0" styleClass="workbench-pane">
+            <TabPane fx:id="parsingTabPane" VBox.vgrow="ALWAYS" tabClosingPolicy="UNAVAILABLE" style="-fx-padding: 6;">
+                <!-- TAB 1: Visual Parsing & In-Place Editing -->
+                <Tab text="Document Parsing">
+                    <ScrollPane fx:id="parsingScrollPane" fitToWidth="true" style="-fx-background-color: transparent;">
+                        <VBox spacing="12.0" style="-fx-padding: 8;">
+                            <!-- Structured Fields Header -->
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="CÁC TRƯỜNG THÔNG TIN QUAN TRỌNG" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label text="(Nhấp để sửa)" style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                            </HBox>
+                            
+                            <!-- Dynamic Structured Fields Container -->
+                            <VBox fx:id="fieldsContainer" spacing="8.0"/>
+
+                            <Separator style="-fx-padding: 4 0;"/>
+
+                            <!-- Recognized Text Blocks Header -->
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="CÁC ĐOẠN VĂN BẢN ĐÃ BÓC TÁCH" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="blocksCountLabel" text="0 khối" style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                            </HBox>
+
+                            <!-- Dynamic Text Blocks Container -->
+                            <VBox fx:id="blocksContainer" spacing="8.0"/>
+                        </VBox>
+                    </ScrollPane>
+                </Tab>
+
+                <!-- TAB 2: Structured JSON -->
+                <Tab text="JSON Data">
+                    <VBox spacing="8.0" style="-fx-padding: 8;">
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <Label text="Cấu trúc Document Model chuẩn:" style="-fx-text-fill: #64748b;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Sao chép JSON" onAction="#onCopyJson" styleClass="tool-btn"/>
+                        </HBox>
+                        <TextArea fx:id="jsonTextArea" VBox.vgrow="ALWAYS" wrapText="true"/>
+                    </VBox>
+                </Tab>
+
+                <!-- TAB 3: Raw OCR Text -->
+                <Tab text="Raw Text">
+                    <VBox spacing="8.0" style="-fx-padding: 8;">
+                        <HBox alignment="CENTER_LEFT" spacing="10.0">
+                            <Label text="Toàn bộ văn bản trích xuất OCR:" style="-fx-text-fill: #64748b;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Button text="Sao chép Text" onAction="#onCopyRawText" styleClass="tool-btn"/>
+                        </HBox>
+                        <TextArea fx:id="rawTextArea" VBox.vgrow="ALWAYS" wrapText="true"/>
+                    </VBox>
+                </Tab>
+            </TabPane>
+        </VBox>
+    </SplitPane>
+
+    <!-- Bottom Action & Export Bar -->
+    <VBox spacing="8.0" styleClass="card" style="-fx-padding: 10 16;">
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Button text="Lưu thay đổi" onAction="#onSaveChanges" styleClass="btn-success"/>
+
+            <Separator orientation="VERTICAL" style="-fx-padding: 0 4;"/>
+
+            <!-- Direct Full Document Export (New Buttons) -->
+            <Label text="Mẫu xuất:" style="-fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+            <ComboBox fx:id="templateComboBox" prefWidth="200.0"/>
+            <Button text="Xuất Word" onAction="#onExportFullWord" styleClass="btn-primary" style="-fx-background-color: #2563eb;"/>
+            <Button text="Xuất Excel" onAction="#onExportFullExcel" styleClass="btn-secondary"/>
+            <Button fx:id="exportButton" text="Xuất theo mẫu" onAction="#onExportDocument" styleClass="btn-secondary"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <HBox fx:id="exportResultBox" visible="false" spacing="8.0" alignment="CENTER_RIGHT">
+                <Label text="Xuất xong" style="-fx-text-fill: #059669; -fx-font-weight: bold;"/>
+                <Button fx:id="openFileButton" text="Mở file" onAction="#onOpenExportedFile" styleClass="btn-open-file"/>
+                <Button text="Thư mục" onAction="#onOpenExportFolder" styleClass="btn-secondary"/>
+            </HBox>
+        </HBox>
+        <Label fx:id="statusMessageLabel" text="PaddleOCR Sẵn sàng" style="-fx-font-size: 11px; -fx-text-fill: #2563eb;"/>
+    </VBox>
+</VBox>

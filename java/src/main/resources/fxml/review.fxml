@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.ReviewController"
+      spacing="16.0">
+    <HBox alignment="CENTER_LEFT" spacing="12.0">
+        <Label text="Kiểm duyệt &amp; Xác thực Dữ liệu (Review Screen)" styleClass="page-header"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Lưu và xác thực" onAction="#onSaveAndValidate" styleClass="btn-success"/>
+    </HBox>
+
+    <HBox alignment="CENTER_LEFT" spacing="16.0" styleClass="card">
+        <Label text="Chọn tài liệu:" style="-fx-font-weight: bold;"/>
+        <ComboBox fx:id="docSelectorComboBox" prefWidth="320.0"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Label fx:id="docStatusLabel" text="Status: -" style="-fx-font-weight: bold; -fx-text-fill: #f59e0b;"/>
+        <Label fx:id="docConfidenceLabel" text="Confidence: -" style="-fx-font-weight: bold; -fx-text-fill: #38bdf8;"/>
+    </HBox>
+
+    <TableView fx:id="fieldsTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colFieldName" text="Tên trường (Field Name)" prefWidth="160.0"/>
+            <TableColumn fx:id="colFieldValue" text="Giá trị đã chuẩn hóa (Double-click để sửa)" prefWidth="250.0"/>
+            <TableColumn fx:id="colRawValue" text="Giá trị gốc (Raw OCR)" prefWidth="200.0"/>
+            <TableColumn fx:id="colDataType" text="Kiểu dữ liệu" prefWidth="100.0"/>
+            <TableColumn fx:id="colConfidence" text="Độ tin cậy" prefWidth="90.0"/>
+            <TableColumn fx:id="colValidated" text="Đã duyệt" prefWidth="80.0"/>
+            <TableColumn fx:id="colError" text="Lỗi Validation" prefWidth="180.0"/>
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+    </TableView>
+
+    <Label fx:id="statusMessageLabel" text="Nhấp đúp vào ô 'Giá trị đã chuẩn hóa' để chỉnh sửa dữ liệu nếu phát hiện sai sót từ OCR." style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;"/>
+</VBox>

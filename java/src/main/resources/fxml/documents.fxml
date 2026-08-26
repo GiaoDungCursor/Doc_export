@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.DocumentsController"
+      spacing="16.0">
+    <HBox alignment="CENTER_LEFT" spacing="12.0">
+        <Label text="Quản lý Tài liệu &amp; Bóc tách" styleClass="page-header"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="➕ Thêm tài liệu mới (Import)" onAction="#onImportDocument" styleClass="btn-primary"/>
+        <Button text="Xóa tài liệu" onAction="#onDeleteDocument" styleClass="btn-danger"/>
+    </HBox>
+
+    <TableView fx:id="docsTable" prefHeight="260.0" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="Document ID" prefWidth="120.0"/>
+            <TableColumn fx:id="colFilename" text="Tên file" prefWidth="220.0"/>
+            <TableColumn fx:id="colType" text="Loại" prefWidth="100.0"/>
+            <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="130.0"/>
+            <TableColumn fx:id="colConfidence" text="Confidence" prefWidth="100.0"/>
+            <TableColumn fx:id="colCreated" text="Ngày tạo" prefWidth="160.0"/>
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+    </TableView>
+
+    <!-- Actions & Detail Panel -->
+    <VBox spacing="10.0" styleClass="card">
+        <HBox alignment="CENTER_LEFT" spacing="12.0">
+            <Label fx:id="selectedDocLabel" text="Chưa chọn tài liệu nào" style="-fx-font-weight: bold; -fx-text-fill: #38bdf8;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button fx:id="extractButton" text="⚡ Bóc tách OCR/PDF" onAction="#onExtractDocument" disable="true" styleClass="btn-primary"/>
+            <Label text="Mẫu xuất:" style="-fx-text-fill: #94a3b8;"/>
+            <ComboBox fx:id="templateComboBox" prefWidth="240.0"/>
+            <Button fx:id="exportButton" text="Điền và xuất mẫu" onAction="#onExportDocument" disable="true" styleClass="btn-success"/>
+        </HBox>
+
+        <Label text="Nội dung văn bản thô trích xuất (Raw OCR / PDF Text):" style="-fx-font-size: 11px; -fx-text-fill: #94a3b8;"/>
+        <TextArea fx:id="rawTextArea" prefHeight="130.0" editable="false" wrapText="true"/>
+        <Label fx:id="statusMessageLabel" text="Sẵn sàng" style="-fx-font-size: 11px; -fx-text-fill: #a5b4fc;"/>
+    </VBox>
+</VBox>

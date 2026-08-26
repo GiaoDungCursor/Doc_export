@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.company.office.ui.MainController"
+            prefHeight="840.0" prefWidth="1320.0">
+    <!-- Sidebar -->
+    <left>
+        <VBox spacing="8.0" prefWidth="240.0" styleClass="sidebar">
+            <Label text="⚡ Office Studio AI" styleClass="sidebar-title"/>
+            
+            <Button text="Xử lý bóc tách" onAction="#showWorkbench" maxWidth="Infinity" styleClass="nav-btn" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
+            <Button text="Quản lý tài liệu" onAction="#showDocuments" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="Tổng quan" onAction="#showDashboard" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="Mẫu biểu" onAction="#showTemplates" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="⏱️ Lịch sử tác vụ (Jobs)" onAction="#showJobs" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="AI Integration (MCP)" onAction="#showMcp" maxWidth="Infinity" styleClass="nav-btn"/>
+            
+            <Region VBox.vgrow="ALWAYS"/>
+            
+            <VBox spacing="6.0" styleClass="status-badge-box">
+                <Label text="HỆ THỐNG TRẠNG THÁI" style="-fx-font-size: 10px; -fx-text-fill: #64748b; -fx-font-weight: bold;"/>
+                <Label fx:id="sidecarStatusLabel" text="Sidecar: Online" style="-fx-text-fill: #059669; -fx-font-size: 11px; -fx-font-weight: bold;"/>
+                <Label fx:id="mcpStatusLabel" text="MCP: 8 AI Tools Ready" style="-fx-text-fill: #2563eb; -fx-font-size: 11px;"/>
+                <Label fx:id="dbStatusLabel" text="SQLite: Connected" style="-fx-text-fill: #0284c7; -fx-font-size: 11px;"/>
+            </VBox>
+        </VBox>
+    </left>
+
+    <!-- Main Content Area -->
+    <center>
+        <StackPane fx:id="contentArea" styleClass="content-pane"/>
+    </center>
+
+    <!-- Status Bar -->
+    <bottom>
+        <HBox spacing="16.0" alignment="CENTER_LEFT" styleClass="status-bar">
+            <Label text="PaddleOCR &amp; PyMuPDF Studio Suite • Java 21 LTS + Python Sidecar + SQLite + MCP" style="-fx-text-fill: #64748b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label text="Sẵn sàng" style="-fx-text-fill: #059669; -fx-font-weight: bold;"/>
+        </HBox>
+    </bottom>
+</BorderPane>

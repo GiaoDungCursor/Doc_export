@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.JobsController"
+      spacing="16.0">
+    <HBox alignment="CENTER_LEFT" spacing="12.0">
+        <Label text="Tiến trình Xử lý Bất đồng bộ (Jobs Log)" styleClass="page-header"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Làm mới" onAction="#refreshJobs" styleClass="btn-secondary"/>
+    </HBox>
+
+    <TableView fx:id="jobsTable" prefHeight="260.0" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colJobId" text="Job ID" prefWidth="120.0"/>
+            <TableColumn fx:id="colDocId" text="Tài liệu" prefWidth="140.0"/>
+            <TableColumn fx:id="colType" text="Tác vụ" prefWidth="110.0"/>
+            <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="120.0"/>
+            <TableColumn fx:id="colProgress" text="Tiến độ" prefWidth="90.0"/>
+            <TableColumn fx:id="colCreated" text="Thời gian tạo" prefWidth="180.0"/>
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+    </TableView>
+
+    <VBox spacing="8.0" styleClass="card">
+        <Label text="Kết quả xử lý chi tiết (Job Output Result / Error):" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+        <TextArea fx:id="jobResultArea" prefHeight="130.0" editable="false" wrapText="true"/>
+    </VBox>
+</VBox>

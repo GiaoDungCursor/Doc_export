@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.McpController"
+      spacing="16.0">
+    <Label text="AI Integration Playground (Model Context Protocol - MCP)" styleClass="page-header"/>
+
+    <HBox spacing="16.0" VBox.vgrow="ALWAYS">
+        <!-- Tools List -->
+        <VBox spacing="8.0" prefWidth="280.0" styleClass="card">
+            <Label text="DANH SÁCH MCP TOOLS" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+            <ListView fx:id="toolsListView" VBox.vgrow="ALWAYS"/>
+        </VBox>
+
+        <!-- Tool Execution Pane -->
+        <VBox spacing="12.0" HBox.hgrow="ALWAYS">
+            <VBox spacing="6.0" styleClass="card">
+                <Label text="Mô tả Tool:" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+                <Label fx:id="toolDescLabel" text="Chọn một tool để xem thông tin" wrapText="true" style="-fx-text-fill: #38bdf8;"/>
+            </VBox>
+
+            <VBox spacing="6.0" styleClass="card" VBox.vgrow="ALWAYS">
+                <Label text="Tham số đầu vào (JSON Input Parameters):" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+                <TextArea fx:id="toolArgsArea" prefHeight="120.0" wrapText="true"/>
+                <HBox alignment="CENTER_RIGHT">
+                    <Button fx:id="runToolButton" text="▶️ Chạy Tool qua Application Layer" onAction="#onRunTool" styleClass="btn-primary"/>
+                </HBox>
+            </VBox>
+
+            <VBox spacing="6.0" styleClass="card" VBox.vgrow="ALWAYS">
+                <Label text="Kết quả trả về từ MCP Server (JSON Output):" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+                <TextArea fx:id="toolResponseArea" prefHeight="160.0" editable="false" wrapText="true"/>
+            </VBox>
+        </VBox>
+    </HBox>
+</VBox>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.DashboardController"
+      spacing="20.0">
+    <Label text="Tổng quan Hệ thống (Dashboard)" styleClass="page-header"/>
+
+    <!-- Metrics Cards -->
+    <HBox spacing="16.0">
+        <VBox styleClass="card" HBox.hgrow="ALWAYS">
+            <Label text="TỔNG SỐ TÀI LIỆU" styleClass="card-title"/>
+            <Label fx:id="totalDocsLabel" text="0" styleClass="card-value"/>
+        </VBox>
+        <VBox styleClass="card" HBox.hgrow="ALWAYS">
+            <Label text="ĐÃ KIỂM DUYỆT (VALIDATED)" styleClass="card-title"/>
+            <Label fx:id="validatedDocsLabel" text="0" styleClass="card-value" style="-fx-text-fill: #10b981;"/>
+        </VBox>
+        <VBox styleClass="card" HBox.hgrow="ALWAYS">
+            <Label text="CẦN REVIEW (NEEDS REVIEW)" styleClass="card-title"/>
+            <Label fx:id="reviewDocsLabel" text="0" styleClass="card-value" style="-fx-text-fill: #f59e0b;"/>
+        </VBox>
+        <VBox styleClass="card" HBox.hgrow="ALWAYS">
+            <Label text="MẪU BIỂU EXCEL/WORD" styleClass="card-title"/>
+            <Label fx:id="templatesCountLabel" text="0" styleClass="card-value" style="-fx-text-fill: #818cf8;"/>
+        </VBox>
+    </HBox>
+
+    <Label text="Tài liệu gần đây" style="-fx-font-size: 15px; -fx-font-weight: bold; -fx-text-fill: #e2e8f0;"/>
+
+    <TableView fx:id="recentDocsTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="colId" text="ID" prefWidth="120.0"/>
+            <TableColumn fx:id="colFilename" text="Tên file" prefWidth="250.0"/>
+            <TableColumn fx:id="colType" text="Loại tài liệu" prefWidth="140.0"/>
+            <TableColumn fx:id="colStatus" text="Trạng thái" prefWidth="150.0"/>
+            <TableColumn fx:id="colConfidence" text="Độ tin cậy (Confidence)" prefWidth="160.0"/>
+        </columns>
+        <columnResizePolicy>
+            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+        </columnResizePolicy>
+    </TableView>
+</VBox>

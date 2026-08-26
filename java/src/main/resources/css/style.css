@@ -1,0 +1,421 @@
+/* ==========================================================================
+   PaddleOCR AI Studio - Premium Clean White & Light Studio Theme
+   ========================================================================== */
+
+.root {
+    -fx-font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #f8fafc;
+    -fx-text-fill: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   Sidebar & Navigation
+   -------------------------------------------------------------------------- */
+.sidebar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 0 1 0 0;
+    -fx-padding: 20 12;
+}
+
+.sidebar-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #1d4ed8;
+    -fx-padding: 0 0 16 8;
+}
+
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-text-fill: #475569;
+    -fx-font-size: 13px;
+    -fx-font-weight: 500;
+    -fx-alignment: CENTER_LEFT;
+    -fx-padding: 10 14;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+}
+
+.nav-btn:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #0f172a;
+}
+
+.nav-btn:pressed, .nav-btn-active {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+}
+
+.status-badge-box {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}
+
+/* --------------------------------------------------------------------------
+   Header & Status Bar
+   -------------------------------------------------------------------------- */
+.status-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 1 0 0 0;
+    -fx-padding: 8 16;
+}
+
+.content-pane {
+    -fx-background-color: #f8fafc;
+    -fx-padding: 16;
+}
+
+.page-header {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   Cards & Panels
+   -------------------------------------------------------------------------- */
+.card {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 16;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.03), 6, 0, 0, 2);
+}
+
+.card-title {
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #64748b;
+    -fx-letter-spacing: 0.5px;
+}
+
+.card-value {
+    -fx-font-size: 24px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2563eb;
+    -fx-padding: 4 0 0 0;
+}
+
+/* --------------------------------------------------------------------------
+   SplitPane (Workbench Studio)
+   -------------------------------------------------------------------------- */
+.split-pane {
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-background-color: #e2e8f0;
+    -fx-padding: 0 2 0 2;
+}
+
+.split-pane > .split-pane-divider:hover {
+    -fx-background-color: #2563eb;
+}
+
+.workbench-pane {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.04), 8, 0, 0, 2);
+}
+
+/* --------------------------------------------------------------------------
+   Viewer Toolbar & Controls
+   -------------------------------------------------------------------------- */
+.viewer-toolbar {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: #e2e8f0;
+    -fx-border-width: 0 0 1 0;
+    -fx-padding: 8 12;
+}
+
+.tool-btn {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #334155;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 4 10;
+    -fx-cursor: hand;
+}
+
+.tool-btn:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-border-color: #94a3b8;
+    -fx-text-fill: #0f172a;
+}
+
+/* --------------------------------------------------------------------------
+   TabPane Studio Styling (Clean White & Light Blue)
+   -------------------------------------------------------------------------- */
+.tab-pane {
+    -fx-background-color: transparent;
+}
+
+.tab-pane .tab-header-area {
+    -fx-padding: 0 0 8 0;
+}
+
+.tab-pane .tab-header-background {
+    -fx-background-color: transparent;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #f1f5f9;
+    -fx-background-radius: 6 6 0 0;
+    -fx-border-color: #cbd5e1;
+    -fx-border-width: 1 1 0 1;
+    -fx-border-radius: 6 6 0 0;
+    -fx-padding: 6 16;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #2563eb;
+    -fx-border-color: #1d4ed8;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #475569;
+    -fx-font-weight: bold;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   Parsed Block Item & Field Cards (White Studio)
+   -------------------------------------------------------------------------- */
+.block-card {
+    -fx-background-color: #f8fafc;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+    -fx-padding: 12;
+}
+
+.block-card:hover {
+    -fx-border-color: #93c5fd;
+    -fx-background-color: #ffffff;
+}
+
+.block-card-selected {
+    -fx-background-color: #fffbeb;
+    -fx-border-color: #f59e0b;
+    -fx-border-width: 2;
+    -fx-effect: dropshadow(gaussian, rgba(245, 158, 11, 0.18), 10, 0.1, 0, 2);
+}
+
+.block-card-selected:hover {
+    -fx-background-color: #fffbeb;
+    -fx-border-color: #d97706;
+}
+
+.badge-tag {
+    -fx-background-color: #eff6ff;
+    -fx-text-fill: #1d4ed8;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-border-color: #bfdbfe;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-padding: 2 6;
+}
+
+.badge-tag-field {
+    -fx-background-color: #ecfdf5;
+    -fx-text-fill: #047857;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-border-color: #a7f3d0;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-padding: 2 6;
+}
+
+.badge-tag-warning {
+    -fx-background-color: #fffbeb;
+    -fx-text-fill: #b45309;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-border-color: #fde68a;
+    -fx-border-radius: 4;
+    -fx-border-width: 1;
+    -fx-padding: 2 6;
+}
+
+.badge-conf {
+    -fx-background-color: #f0fdf4;
+    -fx-text-fill: #15803d;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 4;
+    -fx-padding: 2 6;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons
+   -------------------------------------------------------------------------- */
+.btn-primary {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+.btn-primary:hover {
+    -fx-background-color: #1d4ed8;
+}
+
+.btn-success {
+    -fx-background-color: #059669;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+.btn-success:hover {
+    -fx-background-color: #047857;
+}
+
+.btn-open-file {
+    -fx-background-color: #0284c7;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 16;
+    -fx-cursor: hand;
+}
+
+.btn-open-file:hover {
+    -fx-background-color: #0369a1;
+}
+
+.btn-secondary {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #334155;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6;
+    -fx-border-width: 1;
+    -fx-padding: 7 14;
+    -fx-cursor: hand;
+}
+
+.btn-secondary:hover {
+    -fx-background-color: #f1f5f9;
+    -fx-text-fill: #0f172a;
+}
+
+.btn-danger {
+    -fx-background-color: #dc2626;
+    -fx-text-fill: #ffffff;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6;
+    -fx-padding: 8 14;
+    -fx-cursor: hand;
+}
+
+.btn-danger:hover {
+    -fx-background-color: #b91c1c;
+}
+
+/* --------------------------------------------------------------------------
+   Inputs, TextAreas & TableViews
+   -------------------------------------------------------------------------- */
+.text-input, .text-area {
+    -fx-background-color: #ffffff;
+    -fx-text-fill: #0f172a;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 6 10;
+    -fx-font-family: 'Consolas', 'Segoe UI', monospace;
+    -fx-font-size: 12px;
+}
+
+.text-input:focused, .text-area:focused {
+    -fx-border-color: #2563eb;
+}
+
+.combo-box {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #cbd5e1;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+}
+
+.combo-box .cell {
+    -fx-text-fill: #0f172a;
+}
+
+.table-view {
+    -fx-background-color: #ffffff;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-border-width: 1;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #f8fafc;
+}
+
+.table-view .column-header {
+    -fx-background-color: transparent;
+    -fx-font-weight: bold;
+    -fx-text-fill: #475569;
+    -fx-padding: 8;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #0f172a;
+    -fx-padding: 8;
+}
+
+.table-row-cell:even {
+    -fx-background-color: #ffffff;
+}
+
+.table-row-cell:odd {
+    -fx-background-color: #f8fafc;
+}
+
+.table-row-cell:selected {
+    -fx-background-color: #dbeafe;
+    -fx-text-fill: #1e3a8a;
+}
+
+/* ScrollPane */
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}

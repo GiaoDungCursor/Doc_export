@@ -1,0 +1,37 @@
+# Runtime data and user documents
+app-data/*
+!app-data/templates/
+app-data/templates/*
+!app-data/templates/vietnam/
+!app-data/templates/vietnam/*
+java/app-data/
+
+# Downloaded OCR/AI models (too large for Git; install separately)
+models/
+PaddleOCR-VL-1.5-ONNX/
+
+# Java/Maven build and local tooling
+java/target/
+java/.tools/
+*.class
+
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+
+# IDE and OS files
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Logs, local databases, and generated Office files
+*.log
+*.db
+*.db-shm
+*.db-wal
+~$*
