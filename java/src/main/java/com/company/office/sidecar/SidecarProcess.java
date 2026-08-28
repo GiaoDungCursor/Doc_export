@@ -41,7 +41,8 @@ public class SidecarProcess {
                 workingDir = new File(".");
             }
 
-            ProcessBuilder pb = new ProcessBuilder(pythonExecutable, "-u", scriptFile.getAbsolutePath());
+            String resolvedPython = resolvePythonExecutable(scriptFile);
+            ProcessBuilder pb = new ProcessBuilder(resolvedPython, "-u", scriptFile.getAbsolutePath());
             pb.directory(workingDir);
             pb.environment().put("PYTHONUNBUFFERED", "1");
             pb.environment().put("PYMUPDF_MESSAGE", "fd:2");
@@ -87,6 +88,12 @@ public class SidecarProcess {
         File parentFile = new File("..", path);
         if (parentFile.exists()) return parentFile;
 
+        String appPath = System.getProperty("jpackage.app-path");
+        if (appPath != null && !appPath.isBlank()) {
+            File packaged = new File(new File(appPath).getParentFile(), "app" + File.separator + path);
+            if (packaged.exists()) return packaged;
+        }
+
         // Try absolute search
         File currentDir = new File(".").getAbsoluteFile();
         while (currentDir != null) {
@@ -96,6 +103,15 @@ public class SidecarProcess {
         }
 
         return file;
+    }
+
+    private String resolvePythonExecutable(File scriptFile) {
+        File root = scriptFile.getParentFile() == null ? null : scriptFile.getParentFile().getParentFile();
+        if (root != null) {
+            File bundled = new File(root, "python-runtime" + File.separator + "python.exe");
+            if (bundled.isFile()) return bundled.getAbsolutePath();
+        }
+        return pythonExecutable;
     }
 
     public synchronized void stop() {

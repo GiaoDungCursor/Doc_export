@@ -13,6 +13,8 @@ PaddleOCR-VL-1.5-ONNX/
 # Java/Maven build and local tooling
 java/target/
 java/.tools/
+release/
+release-build/
 *.class
 
 # Python caches and local environments

@@ -97,7 +97,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.company.office.App</mainClass>
+                    <mainClass>com.company.office.Launcher</mainClass>
                 </configuration>
             </plugin>
         </plugins>

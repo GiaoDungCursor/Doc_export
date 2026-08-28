@@ -9,8 +9,23 @@
     <HBox alignment="CENTER_LEFT" spacing="12.0">
         <Label text="Quản lý Mẫu biểu (Templates &amp; Schemas)" styleClass="page-header"/>
         <Region HBox.hgrow="ALWAYS"/>
-        <Button text="➕ Thêm mẫu biểu mới" onAction="#onImportTemplate" styleClass="btn-primary"/>
+        <Button text="＋ Thêm dạng template" onAction="#onImportTemplate" styleClass="btn-primary"
+                accessibleText="Thêm dạng template mới"/>
+        <Button text="Mở thư mục mẫu" onAction="#onOpenTemplateFolder" styleClass="btn-secondary"
+                accessibleText="Mở thư mục chứa template tùy chỉnh"/>
+        <Button text="Quét lại" onAction="#onRescanTemplates" styleClass="btn-secondary"
+                accessibleText="Quét lại thư mục template"/>
         <Button text="Xóa mẫu biểu" onAction="#onDeleteTemplate" styleClass="btn-danger"/>
+    </HBox>
+
+    <HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="template-help-banner">
+        <Label text="ⓘ" styleClass="template-help-icon"/>
+        <VBox spacing="2.0">
+            <Label text="Chọn file Word hoặc Excel; hệ thống sẽ quét vùng trống, bảng và placeholder."
+                   styleClass="template-help-title"/>
+            <Label text="Kiểm tra cột Nguồn dữ liệu, sửa mapping nếu cần rồi nhấn Lưu template để đưa vào Mẫu xuất."
+                   styleClass="template-help-text"/>
+        </VBox>
     </HBox>
 
     <TableView fx:id="templatesTable" prefHeight="260.0" VBox.vgrow="ALWAYS">
@@ -26,7 +41,15 @@
     </TableView>
 
     <VBox spacing="8.0" styleClass="card">
-        <Label text="Cấu trúc Schema &amp; Placeholders bóc tách từ mẫu biểu:" style="-fx-font-weight: bold; -fx-text-fill: #94a3b8;"/>
+        <HBox alignment="CENTER_LEFT" spacing="8.0">
+            <VBox spacing="2.0">
+                <Label text="Placeholder và nguồn dữ liệu" style="-fx-font-weight: bold; -fx-text-fill: #334155;"/>
+                <Label text="Chọn một mẫu, quét cấu trúc rồi sửa trực tiếp cột Nguồn dữ liệu nếu cần."
+                       style="-fx-text-fill: #64748b; -fx-font-size: 12px;"/>
+            </VBox>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Quét &amp; map lại" onAction="#onScanAndMapSelected" styleClass="btn-secondary"/>
+        </HBox>
         <TableView fx:id="mappingTable" prefHeight="220.0" editable="true">
             <columns>
                 <TableColumn fx:id="colTarget" text="Placeholder đích" prefWidth="190.0"/>
@@ -42,7 +65,7 @@
         <HBox alignment="CENTER_RIGHT" spacing="8.0">
             <Label text="Kiểm tra mappings trước khi duyệt" style="-fx-text-fill: #64748b;"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Lưu và duyệt schema" onAction="#onApproveSchema" styleClass="btn-success"/>
+            <Button text="Lưu template" onAction="#onApproveSchema" styleClass="btn-success"/>
         </HBox>
         <Label fx:id="statusLabel" text="Sẵn sàng" style="-fx-font-size: 11px; -fx-text-fill: #a5b4fc;"/>
     </VBox>

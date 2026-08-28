@@ -20,6 +20,7 @@ from templates.excel import ExcelTemplateParser
 from templates.word import WordTemplateParser
 from templates.engine import TemplateEngine
 from templates.schema import TemplateSchemaCompiler
+from templates.auto_adapter import WordTemplateAutoAdapter
 from exporters.excel import ExcelExporter
 from exporters.word import WordExporter
 
@@ -88,7 +89,13 @@ def handle_inspect_template(req_id: str, payload: dict) -> dict:
         return {"id": req_id, "success": True, "data": schema}
     elif ext in [".docx", ".doc"]:
         placeholders = WordTemplateParser.find_placeholders(template_path)
+        adaptation = {"adapted": False, "adaptations": []}
+        if ext == ".docx" and not placeholders:
+            adaptation = WordTemplateAutoAdapter.adapt(template_path)
+            placeholders = WordTemplateParser.find_placeholders(template_path)
         schema = TemplateSchemaCompiler.compile(template_path, "word", placeholders)
+        schema["auto_adapted"] = adaptation["adapted"]
+        schema["adaptations"] = adaptation["adaptations"]
         return {"id": req_id, "success": True, "data": schema}
     else:
         return {"id": req_id, "success": False, "error": f"Unsupported template format: {ext}"}

@@ -13,8 +13,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.File;
+import java.awt.Desktop;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.time.Instant;
 
 public class TemplatesController {
@@ -69,29 +73,142 @@ public class TemplatesController {
     @FXML
     public void onImportTemplate() {
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Chọn mẫu biểu Excel hoặc Word");
+        fileChooser.setTitle("Bước 1/3 — Chọn template Word hoặc Excel");
         fileChooser.getExtensionFilters().addAll(
-                new FileChooser.ExtensionFilter("Office Templates", "*.xlsx", "*.docx", "*.xlsm", "*.doc"),
-                new FileChooser.ExtensionFilter("All Files", "*.*")
+                new FileChooser.ExtensionFilter("Template được hỗ trợ", "*.docx", "*.xlsx", "*.xlsm")
         );
 
         File file = fileChooser.showOpenDialog(templatesTable.getScene().getWindow());
         if (file != null) {
-            statusLabel.setText("Importing & parsing template placeholders...");
+            String defaultName = file.getName().replaceFirst("\\.[^.]+$", "").replace('_', ' ');
+            TextInputDialog nameDialog = new TextInputDialog(defaultName);
+            nameDialog.initOwner(templatesTable.getScene().getWindow());
+            nameDialog.setTitle("Bước 2/3 — Đặt tên template");
+            nameDialog.setHeaderText("Tên này sẽ hiển thị trong danh sách Mẫu xuất");
+            nameDialog.setContentText("Tên template:");
+            Optional<String> enteredName = nameDialog.showAndWait();
+            if (enteredName.isEmpty() || enteredName.get().isBlank()) return;
+
+            statusLabel.setText("Đang kiểm tra file và đọc placeholder…");
             try {
-                AppContext.getInstance().getTemplateService().importTemplate(file, file.getName(), "Custom Template")
+                AppContext.getInstance().getTemplateService().importTemplate(
+                                file, enteredName.get().trim(), "Template tùy chỉnh do người dùng thêm")
                         .thenAccept(tpl -> Platform.runLater(() -> {
-                            statusLabel.setText("Template imported: " + tpl.getName());
                             refreshTemplates();
+                            TemplateEntity imported = templatesTable.getItems().stream()
+                                    .filter(item -> item.getId().equals(tpl.getId())).findFirst().orElse(tpl);
+                            templatesTable.getSelectionModel().select(imported);
+                            templatesTable.scrollTo(imported);
+                            int placeholderCount = mappingTable.getItems().size();
+                            long unmapped = mappingTable.getItems().stream()
+                                    .filter(row -> row.getSource() == null || row.getSource().isBlank()).count();
+                            boolean autoAdapted = false;
+                            int adaptationCount = 0;
+                            try {
+                                Map<String, Object> importedSchema = objectMapper.readValue(
+                                        tpl.getSchemaJson(), new TypeReference<Map<String, Object>>() {});
+                                autoAdapted = Boolean.TRUE.equals(importedSchema.get("auto_adapted"));
+                                if (importedSchema.get("adaptations") instanceof List<?> changes) {
+                                    adaptationCount = changes.size();
+                                }
+                            } catch (Exception ignored) {}
+                            statusLabel.setText((autoAdapted ? "Đã tự chuyển biểu mẫu tĩnh • " : "Đã thêm • ")
+                                    + "“" + tpl.getName() + "” • " + placeholderCount
+                                    + " placeholder • " + unmapped + " chưa map");
+                            Alert result = new Alert(placeholderCount > 0 && unmapped == 0
+                                    ? Alert.AlertType.INFORMATION : Alert.AlertType.WARNING);
+                            result.initOwner(templatesTable.getScene().getWindow());
+                            result.setTitle("Bước 3/3 — Kiểm tra và duyệt");
+                            result.setHeaderText(placeholderCount == 0
+                                    ? "Không nhận diện được vùng dữ liệu tự động"
+                                    : autoAdapted
+                                    ? "Đã nhận diện và gắn tự động " + adaptationCount + " vùng dữ liệu"
+                                    : unmapped == 0 ? "Template đã đọc thành công"
+                                    : "Template còn placeholder chưa được mapping");
+                            result.setContentText(placeholderCount == 0
+                                    ? "File vẫn được lưu, nhưng hiện là mẫu tĩnh. Hãy thêm placeholder {{field_name}} vào Word/Excel rồi bấm Quét lại."
+                                    : unmapped == 0
+                                    ? "Kiểm tra lại bảng Mapping, sau đó nhấn “Lưu và duyệt schema” để sử dụng."
+                                    : "Hãy nhập nguồn dữ liệu cho " + unmapped
+                                      + " dòng trống trong cột “Nguồn dữ liệu”, rồi nhấn “Lưu và duyệt schema”.");
+                            result.showAndWait();
                         }))
                         .exceptionally(ex -> {
-                            Platform.runLater(() -> statusLabel.setText("Template import error: " + ex.getMessage()));
+                            Platform.runLater(() -> {
+                                statusLabel.setText("Không thể thêm template: " + ex.getMessage());
+                                Alert error = new Alert(Alert.AlertType.ERROR,
+                                        "Không đọc được template. Hãy dùng file .docx/.xlsx hợp lệ và đóng file trong Office trước khi thử lại.",
+                                        ButtonType.OK);
+                                error.initOwner(templatesTable.getScene().getWindow());
+                                error.setHeaderText("Thêm template thất bại");
+                                error.showAndWait();
+                            });
                             return null;
                         });
             } catch (Exception e) {
-                statusLabel.setText("Error: " + e.getMessage());
+                statusLabel.setText("Không thể thêm template: " + e.getMessage());
             }
         }
+    }
+
+    @FXML
+    public void onOpenTemplateFolder() {
+        try {
+            Path folder = AppContext.getInstance().getTemplateService().getCustomTemplatesDirectory();
+            Files.createDirectories(folder);
+            if (!Desktop.isDesktopSupported()) throw new IllegalStateException("Máy không hỗ trợ mở thư mục tự động");
+            Desktop.getDesktop().open(folder.toFile());
+            statusLabel.setText("Đã mở thư mục template tùy chỉnh: " + folder);
+        } catch (Exception e) {
+            statusLabel.setText("Không mở được thư mục template: " + e.getMessage());
+        }
+    }
+
+    @FXML
+    public void onRescanTemplates() {
+        statusLabel.setText("Đang quét lại thư mục template…");
+        AppContext.getInstance().getTemplateService().syncStorageCatalog()
+                .thenRun(() -> Platform.runLater(() -> {
+                    refreshTemplates();
+                    statusLabel.setText("Đã quét lại thư mục template.");
+                }))
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> statusLabel.setText("Quét template thất bại: " + ex.getMessage()));
+                    return null;
+                });
+    }
+
+    @FXML
+    public void onScanAndMapSelected() {
+        TemplateEntity selected = templatesTable.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            statusLabel.setText("Hãy chọn một template trong danh sách trước khi quét.");
+            return;
+        }
+        statusLabel.setText("Đang quét cấu trúc và đề xuất mapping cho “" + selected.getName() + "”…");
+        AppContext.getInstance().getSidecarService().inspectTemplateAsync(selected.getFilePath())
+                .thenAccept(schema -> Platform.runLater(() -> {
+                    try {
+                        String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(schema);
+                        selected.setSchemaJson(json);
+                        AppContext.getInstance().getTemplateService().updateTemplate(selected);
+                        schemaJsonArea.setText(json);
+                        loadMappings(json);
+                        Object adaptations = schema.get("adaptations");
+                        int adaptedCount = adaptations instanceof List<?> list ? list.size() : 0;
+                        long unmapped = mappingTable.getItems().stream()
+                                .filter(row -> row.getSource() == null || row.getSource().isBlank()).count();
+                        statusLabel.setText("Quét xong • " + mappingTable.getItems().size()
+                                + " placeholder • " + adaptedCount + " vùng tự nhận diện • "
+                                + unmapped + " chưa map");
+                    } catch (Exception e) {
+                        statusLabel.setText("Không lưu được kết quả quét: " + e.getMessage());
+                    }
+                }))
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> statusLabel.setText("Quét template thất bại: " + ex.getMessage()));
+                    return null;
+                });
     }
 
     @FXML
@@ -129,7 +246,8 @@ public class TemplatesController {
             AppContext.getInstance().getTemplateService().updateTemplate(selected);
             var approved = AppContext.getInstance().getTemplateSchemaService().approve(selected, json);
             schemaJsonArea.setText(json);
-            statusLabel.setText("Đã phê duyệt schema v" + approved.getVersion() + ": " + selected.getName());
+            statusLabel.setText("Đã lưu template “" + selected.getName()
+                    + "” • sẵn sàng trong danh sách Mẫu xuất.");
         } catch (Exception e) {
             statusLabel.setText("Schema JSON không hợp lệ: " + e.getMessage());
         }

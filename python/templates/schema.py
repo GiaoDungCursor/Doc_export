@@ -29,6 +29,12 @@ class TemplateSchemaCompiler:
         "summary", "supplier", "tax_code", "time", "title", "total_amount", "year",
         "address", "amount_in_words", "attachments", "buyer_address", "buyer_tax_code",
         "items", "payer", "reason", "receipt_number", "seller_address", "subtotal", "tax_amount",
+        "parent_authority", "urgency", "objectives", "implementation", "difficulties", "solutions",
+        "author", "supervisor", "introduction", "methodology", "results", "references",
+        "full_name", "birth_date", "gender", "hometown", "residence", "organization",
+        "position", "professional_qualification", "academic_qualification", "assigned_duties",
+        "achievements", "commendation_year", "commendation_title", "commendation_decision",
+        "award_year", "award_form", "award_decision",
     }
 
     @classmethod

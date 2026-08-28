@@ -33,6 +33,11 @@ public class AppContext {
     private final McpService mcpService;
 
     private static File resolvePath(String relativePath) {
+        String appPath = System.getProperty("jpackage.app-path");
+        if (appPath != null && !appPath.isBlank()) {
+            File packaged = new File(new File(appPath).getParentFile(), "app" + File.separator + relativePath);
+            if (packaged.exists()) return packaged.getAbsoluteFile();
+        }
         File fParent = new File("..", relativePath);
         if (new File(fParent, "templates").exists()) {
             return fParent.getAbsoluteFile();

@@ -164,6 +164,8 @@ class WordExporter:
     @classmethod
     def _expand_formatted_content(cls, paragraph, content: str):
         """Turn OCR line wraps into real Word paragraphs and preserve document hierarchy."""
+        from core.text_layout import normalize_block_text
+        content = normalize_block_text(content)
         logical = []
         pending = []
 

@@ -288,6 +288,30 @@
     -fx-background-color: #1d4ed8;
 }
 
+.template-help-banner {
+    -fx-background-color: #eff6ff;
+    -fx-border-color: #bfdbfe;
+    -fx-border-radius: 8px;
+    -fx-background-radius: 8px;
+    -fx-padding: 10px 14px;
+}
+
+.template-help-icon {
+    -fx-text-fill: #2563eb;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+
+.template-help-title {
+    -fx-text-fill: #1e3a8a;
+    -fx-font-weight: bold;
+}
+
+.template-help-text {
+    -fx-text-fill: #475569;
+    -fx-font-size: 12px;
+}
+
 .btn-success {
     -fx-background-color: #059669;
     -fx-text-fill: #ffffff;

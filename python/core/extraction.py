@@ -6,6 +6,7 @@ import uuid
 from typing import Dict, Any, Optional
 from core.document import Document, DocumentMetadata, DocumentField, DocumentPage, Table, BoundingBox
 from core.normalize import DataNormalizer
+from core.text_layout import normalize_document_pages
 from pdf.processor import PdfProcessor
 from ocr.engine import OcrEngine
 
@@ -92,7 +93,7 @@ class ExtractionPipeline:
             pages.append(page)
             metadata.page_count = 1
 
-        full_raw_text = "\n".join(raw_text_parts)
+        full_raw_text = normalize_document_pages(pages)
 
         # Infer document type
         inferred_type = doc_type
@@ -110,16 +111,22 @@ class ExtractionPipeline:
             invoice_score = sum(bool(re.search(pattern, text_lower)) for pattern in invoice_patterns)
             if invoice_score >= 2:
                 inferred_type = "invoice"
-            elif any(k in text_lower for k in ["hợp đồng", "hop dong", "contract", "thỏa thuận", "điều khoản", "dieu khoan"]):
-                inferred_type = "contract"
             elif re.search(r'(?im)^\s*(quyết định|quyet dinh)\s*$', full_raw_text): inferred_type = "decision"
             elif re.search(r'(?im)^\s*(tờ trình|to trinh)\s*$', full_raw_text): inferred_type = "proposal"
             elif re.search(r'(?im)^\s*(biên bản|bien ban)\s*$', full_raw_text): inferred_type = "minutes"
             elif any(k in text_lower for k in ["phiếu thu", "phieu thu"]): inferred_type = "receipt"
             elif re.search(r'(?im)^\s*(báo cáo|bao cao)\s*$', full_raw_text): inferred_type = "report"
+            elif re.search(r'(?im)^\s*(thông báo|thong bao)\s*$', full_raw_text): inferred_type = "notice"
+            elif re.search(r'(?im)^\s*(kế hoạch|ke hoach)\s*$', full_raw_text): inferred_type = "plan"
+            elif re.search(r'(?im)^\s*(giấy mời|giay moi)\s*$', full_raw_text): inferred_type = "invitation"
             elif has_national_header and ("kính gửi" in text_lower or "kinh gui" in text_lower): inferred_type = "official"
             elif any(k in text_lower for k in ["công văn", "cong van"]): inferred_type = "official"
-            elif any(k in text_lower for k in ["báo cáo", "bao cao", "report"]): inferred_type = "report"
+            else:
+                contract_patterns = [r'(?im)^\s*(hợp đồng|hop dong|contract)\b', r'số\s+hợp\s+đồng',
+                                     r'\bbên\s+a\b', r'\bbên\s+b\b', r'contract\s+(?:no|number)']
+                if sum(bool(re.search(pattern, text_lower)) for pattern in contract_patterns) >= 2:
+                    inferred_type = "contract"
+                elif any(k in text_lower for k in ["báo cáo", "bao cao", "report"]): inferred_type = "report"
 
         # Extract structured fields with bounding box mapping
         fields = self._extract_fields(pages, full_raw_text, inferred_type)
@@ -262,7 +269,8 @@ class ExtractionPipeline:
                 name="title", label="Tên hợp đồng", value=lines[0] if lines else "Hợp đồng", confidence=0.9
             )
 
-        elif doc_type in {"official", "decision", "report", "proposal", "minutes", "receipt"}:
+        elif doc_type in {"official", "decision", "report", "proposal", "minutes", "receipt",
+                        "notice", "plan", "invitation"}:
             title_line = ""
             if doc_type == "official":
                 subject_index = next((i for i, line in enumerate(lines)
@@ -275,7 +283,7 @@ class ExtractionPipeline:
                     title_line = " ".join(subject_parts).strip()
             if not title_line:
                 title_line = next((line for line in lines if re.match(
-                    r'(?i)^\s*(công văn|quyết định|báo cáo|tờ trình|biên bản|phiếu thu)\s*$', line)), "")
+                    r'(?i)^\s*(công văn|quyết định|báo cáo(?:\s+chuyên đề)?|tờ trình|biên bản|phiếu thu|thông báo|kế hoạch|giấy mời)\s*$', line)), "")
             if not title_line:
                 recipient_index = next((i for i, line in enumerate(lines) if "kính gửi" in line.lower()), -1)
                 candidates = lines[max(0, recipient_index - 3):recipient_index] if recipient_index > 0 else lines[:10]
@@ -333,6 +341,19 @@ class ExtractionPipeline:
                 fields["issuing_authority"] = DocumentField(name="issuing_authority", label="Cơ quan ban hành",
                     value=authority, confidence=0.88)
 
+            # Reconcile fields against content markers as PDF text layers can
+            # interleave the two header columns into a single physical line.
+            from templates.engine import TemplateEngine
+            administrative = TemplateEngine._derive_vietnamese_administrative(text)
+            labels = {
+                "issuing_authority": "Cơ quan ban hành", "document_number": "Số văn bản",
+                "recipient": "Nơi nhận", "place": "Địa danh", "day": "Ngày",
+                "month": "Tháng", "year": "Năm", "title": "Tiêu đề", "content": "Nội dung",
+            }
+            for name, value in administrative.items():
+                if name in labels and value not in (None, ""):
+                    fields[name] = DocumentField(name=name, label=labels[name], value=value, confidence=0.94)
+
         else:
             title_candidates = []
             if pages:
@@ -351,5 +372,28 @@ class ExtractionPipeline:
             fields["content"] = DocumentField(
                 name="content", label="Nội dung", value=text.strip(), confidence=0.90
             )
+
+        # Common labelled fields used by Vietnamese personnel/achievement forms.
+        # Values remain editable in Document Parsing before template export.
+        form_patterns = {
+            "full_name": ("Họ tên", r'(?im)^\s*-?\s*họ\s+tên[^:]*:\s*([^\n]+)'),
+            "birth_date": ("Ngày sinh", r'(?im)^\s*-?\s*sinh\s+ngày[^:]*:\s*(.+?)(?=\s+giới\s+tính\s*:|$)'),
+            "gender": ("Giới tính", r'(?im)giới\s+tính\s*:\s*([^\n]+)'),
+            "hometown": ("Quê quán", r'(?im)^\s*-?\s*quê\s+quán\s*\d*\s*:\s*([^\n]+)'),
+            "residence": ("Trú quán", r'(?im)^\s*-?\s*trú\s+quán\s*:\s*([^\n]+)'),
+            "organization": ("Đơn vị công tác", r'(?im)^\s*-?\s*đơn\s+vị\s+công\s+tác\s*:\s*([^\n]+)'),
+            "position": ("Chức vụ", r'(?im)^\s*-?\s*chức\s+vụ[^:]*:\s*([^\n]+)'),
+            "professional_qualification": ("Trình độ chuyên môn", r'(?im)^\s*-?\s*trình\s+độ\s+chuyên\s+môn[^:]*:\s*([^\n]+)'),
+            "academic_qualification": ("Học hàm, học vị", r'(?im)^\s*-?\s*học\s+hàm[^:]*:\s*([^\n]+)'),
+            "assigned_duties": ("Quyền hạn, nhiệm vụ", r'(?im)^\s*1\.\s*quyền\s+hạn[^:]*:\s*([^\n]+)'),
+            "achievements": ("Thành tích đạt được", r'(?im)^\s*2\.\s*thành\s+tích[^:]*:\s*([^\n]+)'),
+        }
+        for name, (label, pattern) in form_patterns.items():
+            match = re.search(pattern, text)
+            if not match:
+                continue
+            value = match.group(1).strip(" .…\t")
+            if value:
+                fields[name] = DocumentField(name=name, label=label, value=value, confidence=0.90)
 
         return fields

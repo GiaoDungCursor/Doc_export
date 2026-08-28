@@ -88,23 +88,37 @@ class TemplateEngine:
         lines = [re.sub(r'\s+', ' ', line).strip() for line in text.splitlines() if line.strip()]
         result: Dict[str, Any] = {}
 
-        authority = next((line for line in lines[:8] if line.isupper()
-                          and "CỘNG HÒA" not in line and "ĐỘC LẬP" not in line), "")
+        authority = ""
+        for line in lines[:8]:
+            # PDF text layers frequently interleave the left and right header
+            # columns into one line. Keep only the part before the national header.
+            national_pos = line.upper().find("CỘNG HÒA")
+            candidate = line[:national_pos].strip() if national_pos > 0 else line
+            if candidate.isupper() and not re.match(r'(?i)^(số\s*:|độc lập)', candidate):
+                authority = candidate
+                break
         if authority:
             result["issuing_authority"] = authority
 
-        number = re.search(r'(?im)^\s*số\s*[:：]?\s*([^\n\r]+)', text)
+        number = re.search(r'(?i)\bsố\s*[:：]?\s*([A-Z0-9Đ_-]+(?:/[A-Z0-9Đ_-]+)+)', text)
         if number:
             result["document_number"] = number.group(1).strip()
 
-        recipient = re.search(r'(?im)^\s*kính\s+gửi\s*[:：]\s*(.+)$', text)
-        if recipient:
-            result["recipient"] = recipient.group(1).strip()
+        recipient_index = next((i for i, line in enumerate(lines) if "kính gửi" in line.lower()), -1)
+        if recipient_index >= 0:
+            inline_recipient = re.sub(r'(?i)^.*?kính\s+gửi\s*[:：]?\s*', '', lines[recipient_index]).strip()
+            recipients = [inline_recipient] if inline_recipient else []
+            cursor = recipient_index + 1
+            while cursor < len(lines) and re.match(r'^[-–•]\s+', lines[cursor]):
+                recipients.append(re.sub(r'^[-–•]\s+', '', lines[cursor]).rstrip(';'))
+                cursor += 1
+            if recipients:
+                result["recipient"] = ";\n- ".join(recipients)
 
-        place = re.search(r'(?im)^\s*([^,\n]{2,40}),\s*ngày\b', text)
+        place = re.search(r'(?i)(?:^|\^|\s)([A-ZÀ-ỸĐ][A-Za-zÀ-ỹĐđ ]{1,30}),\s*ngày\b', text)
         if place:
             result["place"] = place.group(1).strip()
-        date = re.search(r'(?i)(\d{1,2})\s+tháng\s+(\d{1,2})\s+năm\s+(\d{4})', text)
+        date = re.search(r'(?i)(\d{1,2})\s+th[aả]ng\s+(\d{1,2})\s+năm\s+(\d{4})', text)
         if date:
             result.update({"day": date.group(1), "month": date.group(2), "year": date.group(3)})
         else:
@@ -112,18 +126,15 @@ class TemplateEngine:
             if year:
                 result["year"] = year.group(1)
 
-        subject_index = next((i for i, line in enumerate(lines) if re.match(r'(?i)^v\s*/\s*v\b', line)), -1)
-        if subject_index >= 0:
-            parts = [lines[subject_index]]
-            for line in lines[subject_index + 1:subject_index + 4]:
-                if re.match(r'(?i)^(cộng hòa|độc lập|.+ngày\s+.*tháng)', line):
-                    break
-                parts.append(line)
-            result["title"] = " ".join(parts)
+        subject = re.search(r'(?is)\bV\s*/\s*v\s+(.+?)(?=\n\s*Kính\s+gửi\b)', text)
+        if subject:
+            result["title"] = "V/v " + re.sub(r'\s+', ' ', subject.group(1)).strip()
 
-        recipient_index = next((i for i, line in enumerate(lines) if "kính gửi" in line.lower()), -1)
         if recipient_index >= 0:
-            result["content"] = "\n".join(lines[recipient_index + 1:]).strip()
+            body_index = recipient_index + 1
+            while body_index < len(lines) and re.match(r'^[-–•]\s+', lines[body_index]):
+                body_index += 1
+            result["content"] = "\n".join(lines[body_index:]).strip()
         return result
 
     @staticmethod

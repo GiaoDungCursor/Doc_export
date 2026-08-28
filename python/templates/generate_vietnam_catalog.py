@@ -3,7 +3,8 @@ from pathlib import Path
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
-from docx.shared import Pt
+from docx.enum.section import WD_SECTION
+from docx.shared import Mm, Pt
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
 
@@ -22,31 +23,41 @@ def paragraph(doc, text="", bold=False, centered=False, size=13):
     return p
 
 
-def administrative_template(filename, document_name, symbol, body_label):
+def administrative_template(filename, document_name, body_label="", *, parent=False,
+                            urgency=False, subject_prefix="", sections=()):
     doc = Document()
     section = doc.sections[0]
-    section.top_margin = section.bottom_margin = Pt(56.7)
-    section.left_margin = Pt(85)
-    section.right_margin = Pt(56.7)
+    section.page_height, section.page_width = Mm(297), Mm(210)
+    section.top_margin = section.bottom_margin = Mm(20)
+    section.left_margin, section.right_margin = Mm(30), Mm(20)
 
     header = doc.add_table(rows=1, cols=2)
     header.autofit = True
     left, right = header.rows[0].cells
-    left.text = "{{issuing_authority}}\nSố: {{document_number}}"
+    left.text = (("{{parent_authority}}\n" if parent else "")
+                 + "{{issuing_authority}}\nSố: {{document_number}}")
     right.text = "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM\nĐộc lập - Tự do - Hạnh phúc\n{{place}}, ngày {{day}} tháng {{month}} năm {{year}}"
     for cell in (left, right):
         for p in cell.paragraphs:
             p.alignment = WD_ALIGN_PARAGRAPH.CENTER
             for run in p.runs:
                 run.font.name = "Times New Roman"
-                run.font.size = Pt(12)
+                run.font.size = Pt(11)
+
+    if urgency:
+        paragraph(doc, "{{urgency}}", True, False, 13)
 
     paragraph(doc, document_name, True, True, 14)
-    paragraph(doc, "{{title}}", True, True, 13)
+    paragraph(doc, subject_prefix + "{{title}}", True, True, 13)
     paragraph(doc, "Kính gửi: {{recipient}}")
     paragraph(doc, "{{summary}}")
-    paragraph(doc, "{{content}}")
-    paragraph(doc, body_label + ": {{conclusion}}")
+    for heading, field in sections:
+        paragraph(doc, heading, True)
+        paragraph(doc, "{{" + field + "}}")
+    if not sections:
+        paragraph(doc, "{{content}}")
+    if body_label:
+        paragraph(doc, body_label + ": {{conclusion}}")
 
     footer = doc.add_table(rows=1, cols=2)
     footer.cell(0, 0).text = "Nơi nhận:\n- {{recipient}};\n- Lưu: {{archive_code}}."
@@ -76,6 +87,31 @@ def minutes_template():
     table.cell(1, 1).text = "{{chairperson}}"
     doc.core_properties.subject = "vietnamese-administrative:minutes"
     doc.save(OUTPUT / "bien_ban.docx")
+
+
+def academic_report_template(filename="bao_cao_hoc_thuat.docx"):
+    """Neutral academic structure; institution branding remains data, not hard-coded."""
+    doc = Document()
+    section = doc.sections[0]
+    section.page_height, section.page_width = Mm(297), Mm(210)
+    section.top_margin, section.bottom_margin = Mm(25), Mm(25)
+    section.left_margin, section.right_margin = Mm(35), Mm(20)
+    paragraph(doc, "{{parent_authority}}", True, True, 13)
+    paragraph(doc, "{{issuing_authority}}", True, True, 13)
+    paragraph(doc, "BÁO CÁO HỌC THUẬT", True, True, 16)
+    paragraph(doc, "{{title}}", True, True, 15)
+    paragraph(doc, "Tác giả: {{author}}", centered=True)
+    paragraph(doc, "Người hướng dẫn: {{supervisor}}", centered=True)
+    paragraph(doc, "{{place}}, năm {{year}}", centered=True)
+    doc.add_page_break()
+    for heading, field in (("TÓM TẮT", "summary"), ("1. GIỚI THIỆU", "introduction"),
+                           ("2. PHƯƠNG PHÁP", "methodology"), ("3. KẾT QUẢ", "results"),
+                           ("4. KẾT LUẬN VÀ KIẾN NGHỊ", "conclusion"),
+                           ("TÀI LIỆU THAM KHẢO", "references")):
+        paragraph(doc, heading, True)
+        paragraph(doc, "{{" + field + "}}")
+    doc.core_properties.subject = "vietnamese-academic-report"
+    doc.save(OUTPUT / filename)
 
 
 def invoice_template():
@@ -133,11 +169,19 @@ def receipt_template():
 
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
-    administrative_template("cong_van.docx", "CÔNG VĂN", "CV-{{authority_code}}", "Đề nghị")
-    administrative_template("quyet_dinh.docx", "QUYẾT ĐỊNH", "QĐ-{{authority_code}}", "Điều khoản thi hành")
-    administrative_template("bao_cao.docx", "BÁO CÁO", "BC-{{authority_code}}", "Kiến nghị")
-    administrative_template("to_trinh.docx", "TỜ TRÌNH", "TTr-{{authority_code}}", "Kính trình")
+    administrative_template("cong_van.docx", "")
+    administrative_template("cong_van_co_quan_hai_cap.docx", "", parent=True)
+    administrative_template("cong_van_khan.docx", "", urgency=True)
+    administrative_template("thong_bao.docx", "THÔNG BÁO")
+    administrative_template("ke_hoach.docx", "KẾ HOẠCH", sections=(("I. MỤC ĐÍCH, YÊU CẦU", "objectives"), ("II. NỘI DUNG", "content"), ("III. TỔ CHỨC THỰC HIỆN", "implementation")))
+    administrative_template("quyet_dinh.docx", "QUYẾT ĐỊNH", "Điều khoản thi hành")
+    administrative_template("bao_cao.docx", "BÁO CÁO", "Kiến nghị")
+    administrative_template("bao_cao_dinh_ky.docx", "BÁO CÁO", "Kiến nghị", sections=(("I. TÌNH HÌNH, KẾT QUẢ", "content"), ("II. KHÓ KHĂN, VƯỚNG MẮC", "difficulties"), ("III. NHIỆM VỤ, GIẢI PHÁP", "solutions")))
+    administrative_template("bao_cao_chuyen_de.docx", "BÁO CÁO CHUYÊN ĐỀ", "Kiến nghị", sections=(("I. BỐI CẢNH", "introduction"), ("II. KẾT QUẢ PHÂN TÍCH", "results"), ("III. KẾT LUẬN", "conclusion")))
+    administrative_template("to_trinh.docx", "TỜ TRÌNH", "Kính trình")
+    administrative_template("giay_moi.docx", "GIẤY MỜI")
     minutes_template()
+    academic_report_template()
     invoice_template()
     receipt_template()
 

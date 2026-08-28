@@ -55,7 +55,9 @@ public class TemplateService {
 
         String tplType = ext.startsWith("xls") ? "excel" : "word";
         String targetFilename = tplId + "_" + filename;
-        Path targetPath = Path.of(templatesStorageDir, targetFilename);
+        Path customDir = Path.of(templatesStorageDir, "vietnam", "custom");
+        Files.createDirectories(customDir);
+        Path targetPath = customDir.resolve(targetFilename);
         Files.copy(sourceFile.toPath(), targetPath, StandardCopyOption.REPLACE_EXISTING);
 
         TemplateEntity entity = new TemplateEntity(tplId, name != null ? name : filename, tplType, targetPath.toString(), description);
@@ -72,35 +74,33 @@ public class TemplateService {
                 });
     }
 
+    public Path getCustomTemplatesDirectory() {
+        return Path.of(templatesStorageDir, "vietnam", "custom").toAbsolutePath().normalize();
+    }
+
     public Optional<TemplateEntity> getTemplate(String id) {
         return templateRepository.findById(id);
     }
 
     public List<TemplateEntity> listTemplates() {
         LinkedHashMap<String, TemplateEntity> unique = new LinkedHashMap<>();
+        Path vietnamRoot = Path.of(templatesStorageDir, "vietnam").toAbsolutePath().normalize();
         for (TemplateEntity template : templateRepository.findAll()) {
             Path path = Path.of(template.getFilePath()).toAbsolutePath().normalize();
-            if (!Files.isRegularFile(path)) continue;
+            if (!path.startsWith(vietnamRoot) || !Files.isRegularFile(path)) continue;
             String key = safeFingerprint(path);
             if (key == null) key = path.toString().toLowerCase(Locale.ROOT);
             TemplateEntity current = unique.get(key);
             if (current == null || prefer(template, current)) unique.put(key, template);
         }
-        List<TemplateEntity> result = new ArrayList<>(unique.values());
-        boolean hasVietnamCatalog = result.stream().anyMatch(t ->
-                t.getFilePath().toLowerCase(Locale.ROOT).contains("vietnam"));
-        if (hasVietnamCatalog) {
-            result.removeIf(t -> {
-                String filename = Path.of(t.getFilePath()).getFileName().toString().toLowerCase(Locale.ROOT);
-                return filename.matches("(?:tpl-[a-z0-9]+_)?(?:report|invoice)_template\\.(?:docx|xlsx)");
-            });
-        }
-        return result;
+        return new ArrayList<>(unique.values());
     }
 
     public CompletableFuture<Void> syncStorageCatalog() {
         List<CompletableFuture<?>> tasks = new ArrayList<>();
-        try (var paths = Files.walk(Path.of(templatesStorageDir))) {
+        Path vietnamRoot = Path.of(templatesStorageDir, "vietnam");
+        if (!Files.isDirectory(vietnamRoot)) return CompletableFuture.completedFuture(null);
+        try (var paths = Files.walk(vietnamRoot)) {
             paths.filter(Files::isRegularFile)
                     .filter(this::isOfficeTemplate)
                     .filter(p -> !p.getFileName().toString().startsWith("~$"))
@@ -115,8 +115,13 @@ public class TemplateService {
                                 "tpl-auto-" + hash.substring(0, 12), displayName(path), type,
                                 path.toAbsolutePath().normalize().toString(),
                                 "Tự động phát hiện; loại: " + inferCategory(path.getFileName().toString())));
+                        entity.setName(displayName(path));
+                        entity.setFilePath(path.toAbsolutePath().normalize().toString());
                         if (entity.getSchemaJson() != null
-                                && entity.getSchemaJson().contains("\"template_fingerprint\":\"" + hash + "\"")) return;
+                                && entity.getSchemaJson().contains("\"template_fingerprint\":\"" + hash + "\"")) {
+                            templateRepository.save(entity);
+                            return;
+                        }
                         tasks.add(sidecarService.inspectTemplateAsync(entity.getFilePath()).thenAccept(schema -> {
                             try { entity.setSchemaJson(objectMapper.writeValueAsString(schema)); }
                             catch (Exception ignored) { entity.setSchemaJson("{}"); }
@@ -149,6 +154,8 @@ public class TemplateService {
         String[][] groups = {{"invoice", "hóa đơn", "hoa don", "gtgt"}, {"receipt", "phiếu thu", "phieu thu"},
                 {"report", "báo cáo", "bao cao"}, {"decision", "quyết định", "quyet dinh"},
                 {"minutes", "biên bản", "bien ban"}, {"proposal", "tờ trình", "to trinh"},
+                {"notice", "thông báo", "thong bao"}, {"plan", "kế hoạch", "ke hoach"},
+                {"invitation", "giấy mời", "giay moi"},
                 {"official", "công văn", "cong van"}, {"contract", "hợp đồng", "hop dong"}};
         for (String[] group : groups) {
             boolean docMatch = false, templateMatch = false;
@@ -169,6 +176,19 @@ public class TemplateService {
 
     private String displayName(Path path) {
         String stem = path.getFileName().toString().replaceFirst("\\.[^.]+$", "");
+        Map<String, String> vietnameseNames = Map.ofEntries(
+                Map.entry("cong_van", "Công văn chuẩn"),
+                Map.entry("cong_van_co_quan_hai_cap", "Công văn cơ quan hai cấp"),
+                Map.entry("cong_van_khan", "Công văn khẩn"),
+                Map.entry("thong_bao", "Thông báo"), Map.entry("ke_hoach", "Kế hoạch"),
+                Map.entry("bao_cao", "Báo cáo chung"), Map.entry("bao_cao_dinh_ky", "Báo cáo định kỳ"),
+                Map.entry("bao_cao_chuyen_de", "Báo cáo chuyên đề"),
+                Map.entry("bao_cao_hoc_thuat", "Báo cáo học thuật"),
+                Map.entry("quyet_dinh", "Quyết định"), Map.entry("to_trinh", "Tờ trình"),
+                Map.entry("bien_ban", "Biên bản"), Map.entry("giay_moi", "Giấy mời"),
+                Map.entry("hoa_don_gtgt", "Hóa đơn GTGT"), Map.entry("phieu_thu", "Phiếu thu"));
+        String canonicalName = vietnameseNames.get(stem.toLowerCase(Locale.ROOT));
+        if (canonicalName != null) return canonicalName;
         String cleaned = stem.replaceFirst("^tpl-[a-zA-Z0-9]+_", "").replace('_', ' ').trim();
         return cleaned.isEmpty() ? path.getFileName().toString()
                 : Character.toUpperCase(cleaned.charAt(0)) + cleaned.substring(1);
@@ -183,6 +203,9 @@ public class TemplateService {
         if (value.contains("bien ban")) return "biên bản";
         if (value.contains("to trinh")) return "tờ trình";
         if (value.contains("cong van")) return "công văn";
+        if (value.contains("thong bao")) return "thông báo";
+        if (value.contains("ke hoach")) return "kế hoạch";
+        if (value.contains("giay moi")) return "giấy mời";
         return "tổng quát";
     }
 
