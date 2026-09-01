@@ -13,6 +13,16 @@
         <Button text="Xóa tài liệu" onAction="#onDeleteDocument" styleClass="btn-danger"/>
     </HBox>
 
+    <HBox spacing="10.0" alignment="CENTER_LEFT" styleClass="template-help-banner">
+        <Label text="💡" styleClass="template-help-icon"/>
+        <VBox spacing="2.0">
+            <Label text="Nhấn '➕ Thêm tài liệu mới' để nạp PDF hoặc ảnh scan (công văn, hóa đơn, tờ trình, quyết định...)."
+                   styleClass="template-help-title"/>
+            <Label text="Sau khi thêm, bạn có thể bấm '⚡ Bóc tách OCR/PDF' hoặc chuyển sang màn hình 'Xử lý bóc tách' để xem và sửa trực quan."
+                   styleClass="template-help-text"/>
+        </VBox>
+    </HBox>
+
     <TableView fx:id="docsTable" prefHeight="260.0" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="colId" text="Document ID" prefWidth="120.0"/>

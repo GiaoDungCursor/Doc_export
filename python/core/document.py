@@ -97,9 +97,13 @@ class Document(BaseModel):
         tables_data = []
         for t in self.tables:
             table_dict = {
+                "id": t.id,
                 "name": t.name,
                 "headers": t.headers,
-                "rows": t.rows
+                "rows": t.rows,
+                "cells": [c.model_dump() for c in t.cells],
+                "bbox": t.bbox.model_dump() if t.bbox else None,
+                "confidence": t.confidence,
             }
             tables_data.append(table_dict)
 
@@ -117,5 +121,6 @@ class Document(BaseModel):
             "tables": tables_data,
             "confidence": self.confidence,
             "status": self.status,
-            "raw_text": self.raw_text
+            "raw_text": self.raw_text,
+            "extra": self.extra,
         }

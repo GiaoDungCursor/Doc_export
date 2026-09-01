@@ -27,7 +27,23 @@ public class App extends Application {
                 scene.getStylesheets().add(getClass().getResource("/css/style.css").toExternalForm());
             }
 
-            primaryStage.setTitle("Office Automation - JavaFX + Python Sidecar + SQLite + MCP");
+            // Set modern application icons
+            try {
+                if (getClass().getResourceAsStream("/icons/app-icon-16.png") != null) {
+                    primaryStage.getIcons().addAll(
+                            new Image(getClass().getResourceAsStream("/icons/app-icon-16.png")),
+                            new Image(getClass().getResourceAsStream("/icons/app-icon-32.png")),
+                            new Image(getClass().getResourceAsStream("/icons/app-icon-64.png")),
+                            new Image(getClass().getResourceAsStream("/icons/app-icon-128.png")),
+                            new Image(getClass().getResourceAsStream("/icons/app-icon-256.png")),
+                            new Image(getClass().getResourceAsStream("/icons/app-icon.png"))
+                    );
+                }
+            } catch (Exception e) {
+                logger.warn("Could not load application icons: {}", e.getMessage());
+            }
+
+            primaryStage.setTitle("Office Studio AI - OCR & Bóc tách Văn bản Tự động");
             primaryStage.setScene(scene);
             primaryStage.setMinWidth(1000);
             primaryStage.setMinHeight(650);

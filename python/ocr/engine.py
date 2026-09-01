@@ -5,6 +5,7 @@ import numpy as np
 from typing import List, Dict, Any, Optional
 from core.document import Block, Line, Word, BoundingBox
 from ocr.preprocess import ImagePreprocessor
+from ocr.table import TableDetector
 
 class OcrEngine:
     """
@@ -44,17 +45,23 @@ class OcrEngine:
 
     def process_image(self, image_input) -> List[Block]:
         """Process image, run OCR, and return clean structured Blocks"""
+        blocks, _ = self.analyze_image(image_input)
+        return blocks
+
+    def analyze_image(self, image_input):
+        """Run OCR once and return both text blocks and ruled-table structure."""
         preprocessed = ImagePreprocessor.preprocess_for_ocr(image_input)
 
         if self._engine is not None:
             try:
                 if hasattr(self._engine, '__call__'):
                     result, elapse = self._engine(preprocessed)
-                    return self._parse_rapidocr_result(result)
+                    blocks = self._parse_rapidocr_result(result)
+                    return blocks, TableDetector.extract_tables(preprocessed, blocks)
             except Exception as e:
                 sys.stderr.write(f"[OcrEngine] OCR processing error: {e}\n")
 
-        return []
+        return [], []
 
     def _parse_rapidocr_result(self, result) -> List[Block]:
         blocks = []

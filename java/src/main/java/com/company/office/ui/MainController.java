@@ -71,6 +71,11 @@ public class MainController {
         loadView("/fxml/mcp.fxml");
     }
 
+    @FXML
+    public void showGuide() {
+        loadView("/fxml/guide.fxml");
+    }
+
     private void loadView(String fxmlPath) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));

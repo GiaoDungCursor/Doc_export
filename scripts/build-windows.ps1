@@ -23,13 +23,49 @@ try {
 Copy-Item -LiteralPath (Join-Path $javaDir "target\office-automation-$Version.jar") -Destination $inputDir
 Copy-Item -Path (Join-Path $javaDir "target\dependency\*.jar") -Destination $inputDir
 Copy-Item -LiteralPath (Join-Path $root "python") -Destination $inputDir -Recurse
+if (Test-Path (Join-Path $root "models\latin_rec")) {
+    New-Item -ItemType Directory -Path (Join-Path $inputDir "models") -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $root "models\latin_rec") `
+        -Destination (Join-Path $inputDir "models") -Recurse
+}
 New-Item -ItemType Directory -Path (Join-Path $inputDir "app-data\templates") -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $root "app-data\templates\vietnam") `
     -Destination (Join-Path $inputDir "app-data\templates") -Recurse
 
+# Copy fast uninstall utilities
+Copy-Item -LiteralPath (Join-Path $root "scripts\fast-uninstall.bat") -Destination $inputDir -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $root "scripts\gỡ_cài_đặt_nhanh.bat") -Destination $inputDir -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $root "scripts\uninstall-app.ps1") -Destination $inputDir -ErrorAction SilentlyContinue
+
+# Ensure icons exist
+$iconPath = Join-Path $root "scripts\icons\app-icon.ico"
+if (-not (Test-Path $iconPath)) {
+    & python (Join-Path $root "scripts\generate_icons.py")
+}
+
 $runtimeDir = Join-Path $inputDir "python-runtime"
 $null = robocopy $pythonRoot $runtimeDir /E /XD "Doc" "include" "libs" "Scripts" "__pycache__" ".pytest_cache" /XF "*.pyc" "*.pyo"
 if ($LASTEXITCODE -ge 8) { throw "Copying Python runtime failed with robocopy exit code $LASTEXITCODE" }
+
+# Slim down python runtime to remove bloat, drastically speeding up MSI install/uninstall
+Write-Host "Slimming Python runtime for fast installation & uninstallation..."
+$bloatDirs = @(
+    "Doc", "include", "libs", "Scripts", "Tools", "tcl",
+    "Lib\idlelib", "Lib\test", "Lib\turtledemo", "Lib\ensurepip", "Lib\pydoc_data",
+    "Lib\tkinter\test", "Lib\unittest\test", "Lib\ctypes\test", "Lib\distutils\tests",
+    "Lib\site-packages\pip", "Lib\site-packages\setuptools", "Lib\site-packages\wheel",
+    "Lib\site-packages\pkg_resources"
+)
+foreach ($rel in $bloatDirs) {
+    $target = Join-Path $runtimeDir $rel
+    if (Test-Path $target) {
+        Remove-Item -LiteralPath $target -Recurse -Force -ErrorAction SilentlyContinue
+    }
+}
+
+# Remove all __pycache__, *.dist-info, *.egg-info, *.pyc, *.pdb
+Get-ChildItem -Path $runtimeDir -Include "__pycache__", "*.dist-info", "*.egg-info" -Recurse -Directory -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+Get-ChildItem -Path $runtimeDir -Include "*.pyc", "*.pyo", "*.pdb", "*.chm" -Recurse -File -ErrorAction SilentlyContinue | Remove-Item -Force -ErrorAction SilentlyContinue
 
 $env:PATH = "$WixDir;$env:PATH"
 if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
@@ -42,6 +78,7 @@ if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
     --app-version $Version `
     --vendor "GiaoDungCursor" `
     --description "Vietnamese document OCR, parsing and template export desktop application" `
+    --icon $iconPath `
     --input $inputDir `
     --dest $outputDir `
     --main-jar "office-automation-$Version.jar" `

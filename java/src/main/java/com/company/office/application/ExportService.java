@@ -166,6 +166,19 @@ public class ExportService {
         }
         canonicalDoc.setFields(fieldsMap);
 
+        Map<String, Object> fieldDetails = new HashMap<>();
+        for (DocumentFieldEntity field : doc.getFields()) {
+            Map<String, Object> detail = new HashMap<>();
+            detail.put("value", field.getFieldValue());
+            detail.put("label", field.getLabel());
+            detail.put("data_type", field.getDataType());
+            detail.put("confidence", field.getConfidence());
+            detail.put("validated", field.isValidated());
+            detail.put("validation_error", field.getValidationError());
+            fieldDetails.put(field.getFieldName(), detail);
+        }
+        canonicalDoc.setFieldDetails(fieldDetails);
+
         Map<String, Object> metaMap = new HashMap<>();
         metaMap.put("filename", doc.getFilename());
         metaMap.put("created_at", doc.getCreatedAt() != null ? doc.getCreatedAt().toString() : "");
@@ -177,6 +190,14 @@ public class ExportService {
                 canonicalDoc.setPages(pages);
             } catch (Exception e) {
                 logger.warn("Could not deserialize pagesJson for export", e);
+            }
+        }
+        if (doc.getTablesJson() != null && !doc.getTablesJson().trim().isEmpty()) {
+            try {
+                List<Map<String, Object>> tables = objectMapper.readValue(doc.getTablesJson(), new TypeReference<>() {});
+                canonicalDoc.setTables(tables);
+            } catch (Exception e) {
+                logger.warn("Could not deserialize tablesJson for export", e);
             }
         }
 

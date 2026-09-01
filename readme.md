@@ -22,6 +22,9 @@ SHA-256 của bản v1.0.0:
 
 ## Chức năng chính
 
+- **Bộ Icon nhận diện chuyên nghiệp**: Icon đa kích cỡ (.ico và .png) tích hợp cho trình cài đặt, desktop shortcut, thanh tiêu đề và taskbar.
+- **Hộp Hướng dẫn tương tác (Interactive Guide Box)**: Hướng dẫn nhanh quy trình 4 bước ngay trên màn hình xử lý bóc tách và trang Sổ tay hướng dẫn chuyên biệt.
+- **Gỡ cài đặt siêu tốc**: Kịch bản dọn dẹp sạch sẽ và gỡ cài đặt chỉ trong 3 giây.
 - OCR PDF và ảnh bằng Python sidecar.
 - Hiển thị trang tài liệu và các khối OCR liên kết với phần Document Parsing.
 - Chuẩn hóa dòng OCR, tiêu đề, mục đánh số và trường văn bản hành chính Việt Nam.
@@ -33,7 +36,12 @@ SHA-256 của bản v1.0.0:
 
 ## Hướng dẫn sử dụng
 
-### 1. Thêm và bóc tách tài liệu
+### 1. Hộp Hướng dẫn nhanh & Sổ tay làm việc
+
+- **Hộp Hướng dẫn nhanh tại Workbench**: Nhấn nút **💡 Hướng dẫn làm việc** ở góc trên màn hình *Xử lý bóc tách* để xem hoặc thu gọn tóm tắt 4 bước thực hiện.
+- **Trang Hướng dẫn chi tiết**: Chọn mục **📖 Hướng dẫn sử dụng** trên thanh điều hướng bên trái để tra cứu danh mục placeholder chuẩn (`{{document_number}}`, `{{issuing_authority}}`...), cách tạo template tùy biến và mẹo tối ưu OCR.
+
+### 2. Thêm và bóc tách tài liệu
 
 1. Mở **Quản lý tài liệu** và thêm PDF hoặc ảnh.
 2. Vào **Xử lý bóc tách** và chọn tài liệu.
@@ -41,7 +49,7 @@ SHA-256 của bản v1.0.0:
 4. Chọn một trường trong **Document Parsing** để xem vùng tương ứng trên ảnh.
 5. Nhấp vào giá trị trường để chỉnh lại nếu OCR nhận sai, sau đó nhấn **Lưu thay đổi**.
 
-### 2. Xuất Word hoặc Excel
+### 3. Xuất Word hoặc Excel
 
 1. Sau khi bóc tách, kiểm tra các trường quan trọng như số văn bản, cơ quan ban hành,
    tiêu đề, nơi nhận, địa danh và ngày tháng.
@@ -49,7 +57,7 @@ SHA-256 của bản v1.0.0:
 3. Nhấn **Xuất theo mẫu**, **Xuất Word** hoặc **Xuất Excel**.
 4. Dùng **Mở file** hoặc **Thư mục** để xem kết quả.
 
-### 3. Thêm template Word/Excel
+### 4. Thêm template Word/Excel
 
 1. Vào **Quản lý Mẫu biểu**.
 2. Nhấn **＋ Thêm dạng template** và chọn `.docx`, `.xlsx` hoặc `.xlsm`.
@@ -57,6 +65,13 @@ SHA-256 của bản v1.0.0:
 4. Chọn template vừa thêm rồi nhấn **Quét & map lại** nếu muốn phân tích lại.
 5. Kiểm tra bảng **Placeholder và nguồn dữ liệu**; sửa cột **Nguồn dữ liệu** khi cần.
 6. Nhấn **Lưu template**. Template sẽ xuất hiện trong danh sách **Mẫu xuất**.
+
+### 5. Gỡ cài đặt siêu tốc (Fast Uninstaller)
+
+Nếu cần gỡ ứng dụng nhanh chóng mà không cần chờ Windows Installer duyệt file:
+1. Chạy file `gỡ_cài_đặt_nhanh.bat` hoặc `fast-uninstall.bat` trong thư mục cài đặt ứng dụng.
+2. Hoặc chạy lệnh PowerShell: `.\scripts\uninstall-app.ps1`.
+3. Quá trình sẽ đóng các tiến trình nền và gỡ sạch sẽ trong khoảng 3 giây.
 
 Có thể chép file thủ công vào:
 

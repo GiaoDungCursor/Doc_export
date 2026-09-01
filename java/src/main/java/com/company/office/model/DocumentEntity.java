@@ -16,6 +16,7 @@ public class DocumentEntity {
     private double confidence;
     private String rawText;
     private String pagesJson;
+    private String tablesJson;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -69,6 +70,8 @@ public class DocumentEntity {
 
     public String getPagesJson() { return pagesJson; }
     public void setPagesJson(String pagesJson) { this.pagesJson = pagesJson; }
+    public String getTablesJson() { return tablesJson; }
+    public void setTablesJson(String tablesJson) { this.tablesJson = tablesJson; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

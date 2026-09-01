@@ -58,10 +58,12 @@ class ExtractionPipeline:
                 if force_ocr or not has_digital_text:
                     # Run PaddleOCR v4 on scanned page
                     if page.image_path and os.path.exists(page.image_path):
-                        ocr_blocks = self.ocr_engine.process_image(page.image_path)
+                        ocr_blocks, ocr_tables = self.ocr_engine.analyze_image(page.image_path)
                         if ocr_blocks:
                             sys.stderr.write(f"[PaddleOCR v4] Scanned page {p_idx + 1}: extracted {len(ocr_blocks)} text blocks\n")
                             page.blocks = ocr_blocks
+                            page.tables = ocr_tables
+                            tables.extend(ocr_tables)
                             ocr_text = "\n".join([b.text for b in ocr_blocks])
                             page.text = ocr_text
                             raw_text_parts.append(ocr_text)
@@ -79,7 +81,7 @@ class ExtractionPipeline:
             cached_img_path = os.path.abspath(os.path.join(self.cache_dir, img_cache_name))
             shutil.copyfile(file_path, cached_img_path)
 
-            ocr_blocks = self.ocr_engine.process_image(file_path)
+            ocr_blocks, image_tables = self.ocr_engine.analyze_image(file_path)
             sys.stderr.write(f"[PaddleOCR v4] Image {filename}: extracted {len(ocr_blocks)} text blocks\n")
 
             ocr_text = "\n".join([b.text for b in ocr_blocks])
@@ -88,9 +90,11 @@ class ExtractionPipeline:
                 page_number=1,
                 image_path=cached_img_path,
                 text=ocr_text,
-                blocks=ocr_blocks
+                blocks=ocr_blocks,
+                tables=image_tables
             )
             pages.append(page)
+            tables.extend(image_tables)
             metadata.page_count = 1
 
         full_raw_text = normalize_document_pages(pages)
@@ -133,7 +137,10 @@ class ExtractionPipeline:
 
         # Compute confidence
         conf_scores = [f.confidence for f in fields.values()]
-        avg_conf = sum(conf_scores) / len(conf_scores) if conf_scores else 0.95
+        ocr_scores = [b.confidence for page in pages for b in page.blocks if b.text.strip()]
+        table_scores = [table.confidence for table in tables if table.confidence > 0]
+        quality_scores = conf_scores + ocr_scores + table_scores
+        avg_conf = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
 
         doc = Document(
             document_type=inferred_type,

@@ -51,6 +51,9 @@ public class ExtractionService {
                             doc.setPagesJson(objectMapper.writeValueAsString(canonicalDoc.getPages()));
                             doc.setPageCount(canonicalDoc.getPages().size());
                         }
+                        if (canonicalDoc.getTables() != null) {
+                            doc.setTablesJson(objectMapper.writeValueAsString(canonicalDoc.getTables()));
+                        }
 
                         List<DocumentFieldEntity> fieldEntities = new ArrayList<>();
                         Map<String, Object> fieldDetails = canonicalDoc.getFieldDetails();

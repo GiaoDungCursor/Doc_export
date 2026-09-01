@@ -22,6 +22,7 @@ public class DocumentRepository {
         try (Connection conn = dbManager.getConnection();
              Statement stmt = conn.createStatement()) {
             try { stmt.execute("ALTER TABLE documents ADD COLUMN pages_json TEXT;"); } catch (Exception ignored) {}
+            try { stmt.execute("ALTER TABLE documents ADD COLUMN tables_json TEXT;"); } catch (Exception ignored) {}
             try { stmt.execute("ALTER TABLE document_fields ADD COLUMN label TEXT;"); } catch (Exception ignored) {}
             try { stmt.execute("ALTER TABLE document_fields ADD COLUMN page_number INTEGER DEFAULT 1;"); } catch (Exception ignored) {}
             try { stmt.execute("ALTER TABLE document_fields ADD COLUMN source_bbox_json TEXT;"); } catch (Exception ignored) {}
@@ -30,8 +31,8 @@ public class DocumentRepository {
 
     public void save(DocumentEntity doc) {
         String sql = """
-            INSERT INTO documents (id, document_type, filename, source_path, file_type, file_size, page_count, status, confidence, raw_text, pages_json, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO documents (id, document_type, filename, source_path, file_type, file_size, page_count, status, confidence, raw_text, pages_json, tables_json, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 document_type = excluded.document_type,
                 filename = excluded.filename,
@@ -43,6 +44,7 @@ public class DocumentRepository {
                 confidence = excluded.confidence,
                 raw_text = excluded.raw_text,
                 pages_json = excluded.pages_json,
+                tables_json = excluded.tables_json,
                 updated_at = CURRENT_TIMESTAMP;
         """;
 
@@ -59,8 +61,9 @@ public class DocumentRepository {
             ps.setDouble(9, doc.getConfidence());
             ps.setString(10, doc.getRawText());
             ps.setString(11, doc.getPagesJson());
-            ps.setString(12, doc.getCreatedAt() != null ? doc.getCreatedAt().toString() : LocalDateTime.now().toString());
-            ps.setString(13, LocalDateTime.now().toString());
+            ps.setString(12, doc.getTablesJson());
+            ps.setString(13, doc.getCreatedAt() != null ? doc.getCreatedAt().toString() : LocalDateTime.now().toString());
+            ps.setString(14, LocalDateTime.now().toString());
             ps.executeUpdate();
 
             // Save fields
@@ -186,6 +189,7 @@ public class DocumentRepository {
         doc.setConfidence(rs.getDouble("confidence"));
         doc.setRawText(rs.getString("raw_text"));
         try { doc.setPagesJson(rs.getString("pages_json")); } catch (Exception ignored) {}
+        try { doc.setTablesJson(rs.getString("tables_json")); } catch (Exception ignored) {}
         String cAt = rs.getString("created_at");
         if (cAt != null) {
             try { doc.setCreatedAt(LocalDateTime.parse(cAt.replace(" ", "T"))); } catch (Exception ignored) {}

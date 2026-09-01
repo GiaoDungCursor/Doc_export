@@ -16,6 +16,7 @@
         <ComboBox fx:id="docSelectorComboBox" prefWidth="300.0"/>
         
         <Button text="Bóc tách lại" onAction="#onReExtract" styleClass="btn-primary" maxWidth="140"/>
+        <Button fx:id="toggleGuideButton" text="💡 Hướng dẫn làm việc" onAction="#onToggleGuide" styleClass="btn-secondary"/>
 
         <Region HBox.hgrow="ALWAYS"/>
 
@@ -25,6 +26,52 @@
             <Label fx:id="docConfidenceBadge" text="Confidence: -" styleClass="badge-conf" style="-fx-font-size: 11px;"/>
         </HBox>
     </HBox>
+
+    <!-- Collapsible Quick Guide Box -->
+    <VBox fx:id="quickGuideBox" spacing="10.0" styleClass="quick-guide-box">
+        <HBox alignment="CENTER_LEFT" spacing="10.0">
+            <Label text="💡 HƯỚNG DẪN QUY TRÌNH LÀM VIỆC NHANH" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a; -fx-font-size: 12px;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="✕" onAction="#onCloseGuide" styleClass="tool-btn" style="-fx-font-size: 11px; -fx-padding: 2 6;"/>
+        </HBox>
+        <HBox spacing="12.0">
+            <!-- Step 1 Mini Card -->
+            <VBox spacing="4.0" styleClass="quick-step-card" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="6.0">
+                    <Label text="1" styleClass="quick-step-num" style="-fx-background-color: #2563eb;"/>
+                    <Label text="Chọn hoặc Thêm file" styleClass="quick-step-title"/>
+                </HBox>
+                <Label text="Chọn file trong ô 'Tài liệu' ở trên, hoặc vào 'Quản lý tài liệu' để nạp PDF / Ảnh scan mới." wrapText="true" styleClass="quick-step-desc"/>
+            </VBox>
+
+            <!-- Step 2 Mini Card -->
+            <VBox spacing="4.0" styleClass="quick-step-card" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="6.0">
+                    <Label text="2" styleClass="quick-step-num" style="-fx-background-color: #0284c7;"/>
+                    <Label text="Bóc tách OCR AI" styleClass="quick-step-title"/>
+                </HBox>
+                <Label text="Bấm nút 'Bóc tách lại'. AI sẽ nhận diện toàn bộ chữ, số văn bản, cơ quan, ngày tháng, bảng biểu." wrapText="true" styleClass="quick-step-desc"/>
+            </VBox>
+
+            <!-- Step 3 Mini Card -->
+            <VBox spacing="4.0" styleClass="quick-step-card" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="6.0">
+                    <Label text="3" styleClass="quick-step-num" style="-fx-background-color: #059669;"/>
+                    <Label text="Kiểm tra &amp; Sửa trực tiếp" styleClass="quick-step-title"/>
+                </HBox>
+                <Label text="Bấm vào trường thông tin bên phải để xem vùng ảnh tương ứng. Nhấp vào ô giá trị để sửa và nhấn 'Lưu thay đổi'." wrapText="true" styleClass="quick-step-desc"/>
+            </VBox>
+
+            <!-- Step 4 Mini Card -->
+            <VBox spacing="4.0" styleClass="quick-step-card" HBox.hgrow="ALWAYS">
+                <HBox alignment="CENTER_LEFT" spacing="6.0">
+                    <Label text="4" styleClass="quick-step-num" style="-fx-background-color: #7c3aed;"/>
+                    <Label text="Xuất Word / Excel" styleClass="quick-step-title"/>
+                </HBox>
+                <Label text="Chọn mẫu trong ô 'Mẫu xuất' -> Bấm 'Xuất theo mẫu' hoặc 'Xuất Word' -> Nhấn 'Mở file' để xem kết quả." wrapText="true" styleClass="quick-step-desc"/>
+            </VBox>
+        </HBox>
+    </VBox>
 
     <!-- Main SplitPane (PaddleOCR AI Studio Style) -->
     <SplitPane fx:id="mainSplitPane" dividerPositions="0.48" VBox.vgrow="ALWAYS">
@@ -81,6 +128,16 @@
                             
                             <!-- Dynamic Structured Fields Container -->
                             <VBox fx:id="fieldsContainer" spacing="8.0"/>
+
+                            <Separator style="-fx-padding: 4 0;"/>
+
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="BẢNG DỮ LIỆU OCR" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="tablesCountLabel" text="0 bảng" style="-fx-font-size: 11px; -fx-text-fill: #64748b;"/>
+                            </HBox>
+
+                            <VBox fx:id="tablesContainer" spacing="10.0"/>
 
                             <Separator style="-fx-padding: 4 0;"/>
 

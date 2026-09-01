@@ -35,6 +35,8 @@ public class WorkbenchController {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @FXML private ComboBox<DocumentEntity> docSelectorComboBox;
+    @FXML private Button toggleGuideButton;
+    @FXML private VBox quickGuideBox;
     @FXML private Label docStatusBadge;
     @FXML private Label docConfidenceBadge;
 
@@ -51,6 +53,8 @@ public class WorkbenchController {
     @FXML private TabPane parsingTabPane;
     @FXML private ScrollPane parsingScrollPane;
     @FXML private VBox fieldsContainer;
+    @FXML private VBox tablesContainer;
+    @FXML private Label tablesCountLabel;
     @FXML private VBox blocksContainer;
     @FXML private Label blocksCountLabel;
     @FXML private TextArea jsonTextArea;
@@ -65,6 +69,7 @@ public class WorkbenchController {
 
     private DocumentEntity currentDocument;
     private List<Map<String, Object>> pagesData = new ArrayList<>();
+    private List<Map<String, Object>> tablesData = new ArrayList<>();
     private int currentPageIndex = 0;
     private double zoomFactor = 0.45;
     private double originalImgWidth = 1488;
@@ -200,6 +205,7 @@ public class WorkbenchController {
         docConfidenceBadge.setText(String.format("Confidence: %.1f%%", doc.getConfidence() * 100));
 
         pagesData.clear();
+        tablesData.clear();
         if (doc.getPagesJson() != null && !doc.getPagesJson().trim().isEmpty()) {
             try {
                 pagesData = objectMapper.readValue(doc.getPagesJson(), new TypeReference<List<Map<String, Object>>>() {});
@@ -207,10 +213,18 @@ public class WorkbenchController {
                 logger.error("Failed to parse pages JSON", e);
             }
         }
+        if (doc.getTablesJson() != null && !doc.getTablesJson().trim().isEmpty()) {
+            try {
+                tablesData = objectMapper.readValue(doc.getTablesJson(), new TypeReference<List<Map<String, Object>>>() {});
+            } catch (Exception e) {
+                logger.error("Failed to parse tables JSON", e);
+            }
+        }
 
         renderCurrentPage();
         onFitWidth();
         populateStructuredFields();
+        populateTables();
         populateTextBlocks();
         populateJsonAndRawText();
         refreshTemplates();
@@ -571,6 +585,124 @@ public class WorkbenchController {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    private void populateTables() {
+        tablesContainer.getChildren().clear();
+        tablesCountLabel.setText(tablesData.size() + " bảng");
+        if (tablesData.isEmpty()) {
+            Label empty = new Label("Không phát hiện bảng có cấu trúc trong tài liệu này.");
+            empty.setStyle("-fx-text-fill: #64748b; -fx-font-style: italic; -fx-padding: 4 8;");
+            tablesContainer.getChildren().add(empty);
+            return;
+        }
+
+        for (int tableIndex = 0; tableIndex < tablesData.size(); tableIndex++) {
+            Map<String, Object> table = tablesData.get(tableIndex);
+            List<Object> headers = mutableList(table, "headers");
+            List<Object> rows = mutableList(table, "rows");
+            List<Map<String, Object>> cells = table.get("cells") instanceof List<?> rawCells
+                    ? (List<Map<String, Object>>) (List<?>) rawCells : new ArrayList<>();
+
+            VBox card = new VBox(7);
+            card.getStyleClass().add("block-card");
+            HBox titleRow = new HBox(8);
+            titleRow.setAlignment(Pos.CENTER_LEFT);
+            Label badge = new Label("Table");
+            badge.getStyleClass().add("badge-tag-field");
+            Label title = new Label(String.valueOf(table.getOrDefault("name", "Bảng " + (tableIndex + 1))));
+            title.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b;");
+            double tableConfidence = getDouble(table.get("confidence"));
+            Label confidence = new Label(String.format("%.0f%%", tableConfidence * 100));
+            confidence.getStyleClass().add(tableConfidence < .85 ? "badge-warning" : "badge-conf");
+            Region spacer = new Region();
+            HBox.setHgrow(spacer, Priority.ALWAYS);
+            Label hint = new Label(tableConfidence < .85 ? "⚠ Cần đối chiếu" : "✓ Đã nhận dạng");
+            hint.setStyle(tableConfidence < .85 ? "-fx-text-fill: #b45309;" : "-fx-text-fill: #059669;");
+            titleRow.getChildren().addAll(badge, title, confidence, spacer, hint);
+
+            int columnCount = headers.size();
+            for (Object row : rows) {
+                if (row instanceof List<?> list) columnCount = Math.max(columnCount, list.size());
+            }
+            GridPane grid = new GridPane();
+            grid.setHgap(4);
+            grid.setVgap(4);
+            for (int col = 0; col < columnCount; col++) {
+                TextField editor = new TextField(col < headers.size() ? String.valueOf(headers.get(col)) : "");
+                editor.setStyle("-fx-font-weight: bold; -fx-background-color: #eff6ff;");
+                final int column = col;
+                editor.textProperty().addListener((obs, oldValue, newValue) -> setListValue(headers, column, newValue));
+                grid.add(editor, col, 0);
+                GridPane.setHgrow(editor, Priority.ALWAYS);
+                ColumnConstraints constraints = new ColumnConstraints(110, 170, Double.MAX_VALUE);
+                constraints.setHgrow(Priority.ALWAYS);
+                grid.getColumnConstraints().add(constraints);
+            }
+            for (int rowIndex = 0; rowIndex < rows.size(); rowIndex++) {
+                List<Object> row = rows.get(rowIndex) instanceof List<?> list
+                        ? (List<Object>) list : new ArrayList<>();
+                if (!(rows.get(rowIndex) instanceof List<?>)) rows.set(rowIndex, row);
+                for (int col = 0; col < columnCount; col++) {
+                    TextField editor = new TextField(col < row.size() ? String.valueOf(row.get(col)) : "");
+                    double cellConfidence = findCellConfidence(cells, rowIndex + 1, col);
+                    if (cellConfidence > 0 && cellConfidence < .85) {
+                        editor.setStyle("-fx-border-color: #f59e0b; -fx-background-color: #fffbeb;");
+                        editor.setTooltip(new Tooltip(String.format("OCR %.1f%% — cần đối chiếu ảnh gốc", cellConfidence * 100)));
+                    }
+                    final int rowNumber = rowIndex;
+                    final int column = col;
+                    editor.textProperty().addListener((obs, oldValue, newValue) -> {
+                        setListValue(row, column, newValue);
+                        updateCell(cells, rowNumber + 1, column, newValue);
+                    });
+                    grid.add(editor, col, rowIndex + 1);
+                    GridPane.setHgrow(editor, Priority.ALWAYS);
+                }
+            }
+            ScrollPane tableScroll = new ScrollPane(grid);
+            tableScroll.setFitToHeight(true);
+            tableScroll.setPannable(true);
+            tableScroll.setStyle("-fx-background-color: transparent;");
+            card.getChildren().addAll(titleRow, tableScroll);
+            tablesContainer.getChildren().add(card);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Object> mutableList(Map<String, Object> owner, String key) {
+        Object value = owner.get(key);
+        if (value instanceof List<?>) return (List<Object>) value;
+        List<Object> list = new ArrayList<>();
+        owner.put(key, list);
+        return list;
+    }
+
+    private void setListValue(List<Object> list, int index, String value) {
+        while (list.size() <= index) list.add("");
+        list.set(index, value);
+    }
+
+    private double findCellConfidence(List<Map<String, Object>> cells, int rowIndex, int colIndex) {
+        for (Map<String, Object> cell : cells) {
+            int row = (int) getDouble(cell.getOrDefault("row_index", cell.get("row")));
+            int col = (int) getDouble(cell.getOrDefault("col_index", cell.get("col")));
+            if (row == rowIndex && col == colIndex) return getDouble(cell.get("confidence"));
+        }
+        return 0;
+    }
+
+    private void updateCell(List<Map<String, Object>> cells, int rowIndex, int colIndex, String value) {
+        for (Map<String, Object> cell : cells) {
+            int row = (int) getDouble(cell.getOrDefault("row_index", cell.get("row")));
+            int col = (int) getDouble(cell.getOrDefault("col_index", cell.get("col")));
+            if (row == rowIndex && col == colIndex) {
+                cell.put("text", value);
+                cell.put("confidence", 1.0);
+                return;
+            }
+        }
+    }
+
     private void populateJsonAndRawText() {
         if (currentDocument == null) {
             jsonTextArea.clear();
@@ -591,6 +723,7 @@ public class WorkbenchController {
             }
             jsonDoc.put("fields", fieldsMap);
             jsonDoc.put("pages", pagesData);
+            jsonDoc.put("tables", tablesData);
 
             jsonTextArea.setText(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonDoc));
         } catch (Exception e) {
@@ -696,6 +829,12 @@ public class WorkbenchController {
                 f.setValidated(true);
                 f.setValidationError(null);
             }
+        }
+        try {
+            currentDocument.setTablesJson(objectMapper.writeValueAsString(tablesData));
+        } catch (Exception e) {
+            statusMessageLabel.setText("Không thể lưu dữ liệu bảng: " + e.getMessage());
+            return;
         }
         currentDocument.setStatus("VALIDATED");
         ctx.getDocumentRepository().save(currentDocument);
@@ -917,5 +1056,28 @@ public class WorkbenchController {
             try { return Double.parseDouble(s); } catch (Exception ignored) {}
         }
         return 0.0;
+    }
+
+    @FXML
+    public void onToggleGuide() {
+        if (quickGuideBox != null) {
+            boolean visible = !quickGuideBox.isVisible();
+            quickGuideBox.setVisible(visible);
+            quickGuideBox.setManaged(visible);
+            if (toggleGuideButton != null) {
+                toggleGuideButton.setText(visible ? "✕ Ẩn hướng dẫn" : "💡 Hướng dẫn làm việc");
+            }
+        }
+    }
+
+    @FXML
+    public void onCloseGuide() {
+        if (quickGuideBox != null) {
+            quickGuideBox.setVisible(false);
+            quickGuideBox.setManaged(false);
+            if (toggleGuideButton != null) {
+                toggleGuideButton.setText("💡 Hướng dẫn làm việc");
+            }
+        }
     }
 }

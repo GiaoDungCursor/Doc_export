@@ -9,15 +9,23 @@
             prefHeight="840.0" prefWidth="1320.0">
     <!-- Sidebar -->
     <left>
-        <VBox spacing="8.0" prefWidth="240.0" styleClass="sidebar">
-            <Label text="⚡ Office Studio AI" styleClass="sidebar-title"/>
+        <VBox spacing="8.0" prefWidth="250.0" styleClass="sidebar">
+            <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="sidebar-brand-box">
+                <javafx.scene.image.ImageView fitWidth="28.0" fitHeight="28.0" preserveRatio="true">
+                    <image>
+                        <javafx.scene.image.Image url="@/icons/app-icon-32.png"/>
+                    </image>
+                </javafx.scene.image.ImageView>
+                <Label text="Office Studio AI" styleClass="sidebar-title"/>
+            </HBox>
             
-            <Button text="Xử lý bóc tách" onAction="#showWorkbench" maxWidth="Infinity" styleClass="nav-btn" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
-            <Button text="Quản lý tài liệu" onAction="#showDocuments" maxWidth="Infinity" styleClass="nav-btn"/>
-            <Button text="Tổng quan" onAction="#showDashboard" maxWidth="Infinity" styleClass="nav-btn"/>
-            <Button text="Mẫu biểu" onAction="#showTemplates" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="📄 Xử lý bóc tách" onAction="#showWorkbench" maxWidth="Infinity" styleClass="nav-btn" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
+            <Button text="📁 Quản lý tài liệu" onAction="#showDocuments" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="📊 Tổng quan" onAction="#showDashboard" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="📑 Quản lý Mẫu biểu" onAction="#showTemplates" maxWidth="Infinity" styleClass="nav-btn"/>
             <Button text="⏱️ Lịch sử tác vụ (Jobs)" onAction="#showJobs" maxWidth="Infinity" styleClass="nav-btn"/>
-            <Button text="AI Integration (MCP)" onAction="#showMcp" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="🤖 AI Integration (MCP)" onAction="#showMcp" maxWidth="Infinity" styleClass="nav-btn"/>
+            <Button text="📖 Hướng dẫn sử dụng" onAction="#showGuide" maxWidth="Infinity" styleClass="nav-btn" style="-fx-text-fill: #047857; -fx-font-weight: bold;"/>
             
             <Region VBox.vgrow="ALWAYS"/>
             

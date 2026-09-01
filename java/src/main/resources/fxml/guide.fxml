@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.company.office.ui.GuideController"
+      spacing="16.0">
+
+    <!-- Header Banner -->
+    <HBox alignment="CENTER_LEFT" spacing="14.0" styleClass="guide-header-card">
+        <Label text="📖" style="-fx-font-size: 28px;"/>
+        <VBox spacing="4.0" HBox.hgrow="ALWAYS">
+            <Label text="Trung tâm Hướng dẫn &amp; Sổ tay Làm việc" styleClass="page-header" style="-fx-text-fill: #1e3a8a;"/>
+            <Label text="Quy trình bóc tách OCR AI, hiệu chỉnh dữ liệu, tra cứu placeholder và mẹo xuất Word/Excel chuẩn văn bản Việt Nam."
+                   style="-fx-text-fill: #475569; -fx-font-size: 12px;"/>
+        </VBox>
+        <Label fx:id="copyToastLabel" text="Đã sao chép!" styleClass="copy-toast-badge" visible="false"/>
+    </HBox>
+
+    <!-- Main TabPane -->
+    <TabPane fx:id="guideTabPane" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" styleClass="guide-tabpane">
+        
+        <!-- TAB 1: 4-STEP WORKFLOW -->
+        <Tab text="Quy trình làm việc 4 bước">
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 12;">
+                <VBox spacing="14.0">
+                    <Label text="QUY TRÌNH XỬ LÝ VĂN BẢN VÀ XUẤT MẪU CHUẨN" styleClass="card-title" style="-fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+
+                    <!-- Step 1 -->
+                    <HBox spacing="14.0" styleClass="guide-step-card">
+                        <VBox alignment="CENTER" minWidth="44.0" prefWidth="44.0">
+                            <Label text="1" styleClass="guide-step-num" style="-fx-background-color: #2563eb;"/>
+                        </VBox>
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="Thêm và Quản lý Tài liệu" styleClass="guide-step-title"/>
+                                <Label text="PDF / Ảnh Scan" styleClass="badge-tag"/>
+                            </HBox>
+                            <Label text="Vào mục 'Quản lý tài liệu' trên thanh điều hướng bên trái và nhấn '➕ Thêm tài liệu mới (Import)'. Bạn có thể chọn file PDF đơn/nhiều trang hoặc các định dạng ảnh (.png, .jpg, .jpeg, .bmp, .tiff)." wrapText="true" styleClass="guide-step-desc"/>
+                            <Label text="💡 Mẹo: Hệ thống tự động phân loại văn bản (công văn, quyết định, hóa đơn, tờ trình...) dựa trên nội dung phân tích ban đầu." wrapText="true" styleClass="guide-tip-text"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Step 2 -->
+                    <HBox spacing="14.0" styleClass="guide-step-card">
+                        <VBox alignment="CENTER" minWidth="44.0" prefWidth="44.0">
+                            <Label text="2" styleClass="guide-step-num" style="-fx-background-color: #0284c7;"/>
+                        </VBox>
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="Bóc tách OCR AI &amp; Trích xuất Thông tin" styleClass="guide-step-title"/>
+                                <Label text="PaddleOCR + Layout AI" styleClass="badge-tag"/>
+                            </HBox>
+                            <Label text="Chuyển sang mục 'Xử lý bóc tách' (Workbench). Chọn tài liệu cần xử lý trong danh sách thả xuống rồi nhấn nút 'Bóc tách lại'. AI sẽ nhận diện toàn bộ vùng chữ, các bảng biểu, số văn bản, cơ quan ban hành, ngày tháng, nội dung chính và người ký." wrapText="true" styleClass="guide-step-desc"/>
+                            <Label text="💡 Bạn có thể bật tính năng 'Hiện tất cả khung' để xem vị trí bounding box chi tiết của từng khối chữ trên ảnh gốc." wrapText="true" styleClass="guide-tip-text"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Step 3 -->
+                    <HBox spacing="14.0" styleClass="guide-step-card">
+                        <VBox alignment="CENTER" minWidth="44.0" prefWidth="44.0">
+                            <Label text="3" styleClass="guide-step-num" style="-fx-background-color: #059669;"/>
+                        </VBox>
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="Kiểm tra trực quan &amp; Hiệu chỉnh Giá trị" styleClass="guide-step-title"/>
+                                <Label text="Visual Parsing &amp; Interactive Edit" styleClass="badge-tag"/>
+                            </HBox>
+                            <Label text="Nhấp vào bất kỳ trường thông tin nào trong cột 'Document Parsing' bên phải. Vùng ảnh tương ứng sẽ tự động được làm nổi bật bên trái. Nếu có từ ngữ nhận diện chưa chuẩn do tài liệu mờ, nhấp trực tiếp vào ô giá trị để gõ lại nội dung, sau đó nhấn 'Lưu thay đổi'." wrapText="true" styleClass="guide-step-desc"/>
+                            <Label text="💡 Độ tin cậy (Confidence) màu xanh lá biểu thị dữ liệu trích xuất rất chính xác (>90%)." wrapText="true" styleClass="guide-tip-text"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Step 4 -->
+                    <HBox spacing="14.0" styleClass="guide-step-card">
+                        <VBox alignment="CENTER" minWidth="44.0" prefWidth="44.0">
+                            <Label text="4" styleClass="guide-step-num" style="-fx-background-color: #7c3aed;"/>
+                        </VBox>
+                        <VBox spacing="6.0" HBox.hgrow="ALWAYS">
+                            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                                <Label text="Chọn Mẫu biểu &amp; Xuất Word / Excel" styleClass="guide-step-title"/>
+                                <Label text=".DOCX / .XLSX" styleClass="badge-tag"/>
+                            </HBox>
+                            <Label text="Tại thanh công cụ phía dưới cùng, chọn biểu mẫu mong muốn trong ô 'Mẫu xuất' (Công văn, Quyết định, Báo cáo, Hóa đơn...) rồi nhấn 'Xuất theo mẫu'. Bạn cũng có thể bấm 'Xuất Word' hoặc 'Xuất Excel' để tạo file toàn văn nhanh. Sau khi xuất xong, nhấn 'Mở file' hoặc 'Thư mục' để xem kết quả." wrapText="true" styleClass="guide-step-desc"/>
+                            <Label text="💡 File xuất được áp dụng các quy chuẩn thể thức văn bản hành chính Việt Nam (Nghị định 30/2020/NĐ-CP)." wrapText="true" styleClass="guide-tip-text"/>
+                        </VBox>
+                    </HBox>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- TAB 2: PLACEHOLDERS REFERENCE -->
+        <Tab text="Tra cứu Placeholder chuẩn">
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 12;">
+                <VBox spacing="14.0">
+                    <HBox alignment="CENTER_LEFT" spacing="10.0">
+                        <Label text="DANH SÁCH PLACEHOLDER WORD / EXCEL (Nhấp vào để sao chép nhanh)" styleClass="card-title" style="-fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+                    </HBox>
+
+                    <!-- Grid of common placeholders with copy buttons -->
+                    <GridPane hgap="12.0" vgap="10.0">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="30.0"/>
+                            <ColumnConstraints percentWidth="50.0"/>
+                            <ColumnConstraints percentWidth="20.0"/>
+                        </columnConstraints>
+
+                        <!-- Row 0: Header -->
+                        <Label text="Mã Placeholder" styleClass="grid-hdr" GridPane.rowIndex="0" GridPane.columnIndex="0"/>
+                        <Label text="Ý nghĩa &amp; Trường dữ liệu" styleClass="grid-hdr" GridPane.rowIndex="0" GridPane.columnIndex="1"/>
+                        <Label text="Thao tác" styleClass="grid-hdr" GridPane.rowIndex="0" GridPane.columnIndex="2"/>
+
+                        <!-- Row 1: document_number -->
+                        <Label text="{{document_number}}" styleClass="code-badge" GridPane.rowIndex="1" GridPane.columnIndex="0"/>
+                        <Label text="Số và ký hiệu văn bản (Ví dụ: 123/QĐ-UBND)" styleClass="grid-cell-text" GridPane.rowIndex="1" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagDocNum" styleClass="tool-btn" GridPane.rowIndex="1" GridPane.columnIndex="2"/>
+
+                        <!-- Row 2: issuing_authority -->
+                        <Label text="{{issuing_authority}}" styleClass="code-badge" GridPane.rowIndex="2" GridPane.columnIndex="0"/>
+                        <Label text="Cơ quan / Đơn vị ban hành văn bản" styleClass="grid-cell-text" GridPane.rowIndex="2" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagIssuing" styleClass="tool-btn" GridPane.rowIndex="2" GridPane.columnIndex="2"/>
+
+                        <!-- Row 3: parent_authority -->
+                        <Label text="{{parent_authority}}" styleClass="code-badge" GridPane.rowIndex="3" GridPane.columnIndex="0"/>
+                        <Label text="Cơ quan cấp trên quản lý trực tiếp" styleClass="grid-cell-text" GridPane.rowIndex="3" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagParent" styleClass="tool-btn" GridPane.rowIndex="3" GridPane.columnIndex="2"/>
+
+                        <!-- Row 4: place, day, month, year -->
+                        <Label text="{{place}}, {{day}}/{{month}}/{{year}}" styleClass="code-badge" GridPane.rowIndex="4" GridPane.columnIndex="0"/>
+                        <Label text="Địa danh và Ngày, Tháng, Năm ban hành" styleClass="grid-cell-text" GridPane.rowIndex="4" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagPlace" styleClass="tool-btn" GridPane.rowIndex="4" GridPane.columnIndex="2"/>
+
+                        <!-- Row 5: title -->
+                        <Label text="{{title}}" styleClass="code-badge" GridPane.rowIndex="5" GridPane.columnIndex="0"/>
+                        <Label text="Tiêu đề, Tên loại văn bản (QUYẾT ĐỊNH, CÔNG VĂN...)" styleClass="grid-cell-text" GridPane.rowIndex="5" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagTitle" styleClass="tool-btn" GridPane.rowIndex="5" GridPane.columnIndex="2"/>
+
+                        <!-- Row 6: summary -->
+                        <Label text="{{summary}}" styleClass="code-badge" GridPane.rowIndex="6" GridPane.columnIndex="0"/>
+                        <Label text="Trích yếu nội dung văn bản" styleClass="grid-cell-text" GridPane.rowIndex="6" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagSummary" styleClass="tool-btn" GridPane.rowIndex="6" GridPane.columnIndex="2"/>
+
+                        <!-- Row 7: recipient -->
+                        <Label text="{{recipient}}" styleClass="code-badge" GridPane.rowIndex="7" GridPane.columnIndex="0"/>
+                        <Label text="Nơi nhận văn bản (Như Điều 3, Lưu VT...)" styleClass="grid-cell-text" GridPane.rowIndex="7" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagRecipient" styleClass="tool-btn" GridPane.rowIndex="7" GridPane.columnIndex="2"/>
+
+                        <!-- Row 8: content -->
+                        <Label text="{{content}}" styleClass="code-badge" GridPane.rowIndex="8" GridPane.columnIndex="0"/>
+                        <Label text="Toàn bộ nội dung thân bài của văn bản" styleClass="grid-cell-text" GridPane.rowIndex="8" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagContent" styleClass="tool-btn" GridPane.rowIndex="8" GridPane.columnIndex="2"/>
+
+                        <!-- Row 9: signer_title & name -->
+                        <Label text="{{signer_title}} / {{signer_name}}" styleClass="code-badge" GridPane.rowIndex="9" GridPane.columnIndex="0"/>
+                        <Label text="Chức vụ và Họ tên người ký duyệt" styleClass="grid-cell-text" GridPane.rowIndex="9" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagSignerName" styleClass="tool-btn" GridPane.rowIndex="9" GridPane.columnIndex="2"/>
+
+                        <!-- Row 10: tax_code & total_amount -->
+                        <Label text="{{tax_code}} / {{total_amount}}" styleClass="code-badge" GridPane.rowIndex="10" GridPane.columnIndex="0"/>
+                        <Label text="Mã số thuế &amp; Tổng tiền (Hóa đơn / Phiếu thu)" styleClass="grid-cell-text" GridPane.rowIndex="10" GridPane.columnIndex="1"/>
+                        <Button text="Sao chép" onAction="#copyTagTotalAmount" styleClass="tool-btn" GridPane.rowIndex="10" GridPane.columnIndex="2"/>
+                    </GridPane>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- TAB 3: CUSTOM TEMPLATES GUIDE -->
+        <Tab text="Tạo &amp; Thêm Template tùy chỉnh">
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 12;">
+                <VBox spacing="14.0">
+                    <Label text="HƯỚNG DẪN TẠO BIỂU MẪU WORD / EXCEL TÙY BIẾN" styleClass="card-title" style="-fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+
+                    <VBox spacing="10.0" styleClass="card">
+                        <Label text="1. Thiết kế file Word hoặc Excel của đơn vị bạn" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a;"/>
+                        <Label text="Mở Microsoft Word hoặc Excel, tạo mẫu văn bản theo ý muốn. Tại những vị trí cần điền dữ liệu tự động, gõ các thẻ placeholder dạng {{tên_trường}} như {{document_number}}, {{title}}, {{content}}..." wrapText="true" styleClass="guide-step-desc"/>
+                        <Label text="Ví dụ định dạng trong Word:" style="-fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #475569;"/>
+                        <TextArea editable="false" prefRowCount="5" style="-fx-font-family: monospace; -fx-font-size: 12px;"
+                                  text="{{issuing_authority}}&#10;Số: {{document_number}}&#10;&#10;{{place}}, ngày {{day}} tháng {{month}} năm {{year}}&#10;&#10;{{title}}&#10;Kính gửi: {{recipient}}&#10;&#10;{{content}}"/>
+                    </VBox>
+
+                    <VBox spacing="10.0" styleClass="card">
+                        <Label text="2. Nạp Template vào Office Studio AI" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a;"/>
+                        <Label text="Cách 1: Vào tab 'Mẫu biểu', nhấn nút '＋ Thêm dạng template' và chọn file .docx hoặc .xlsx của bạn.&#10;Cách 2: Chép file trực tiếp vào thư mục: app-data/templates/vietnam/custom rồi nhấn nút 'Quét lại'." wrapText="true" styleClass="guide-step-desc"/>
+                    </VBox>
+
+                    <VBox spacing="10.0" styleClass="card">
+                        <Label text="3. Quét và Lưu Mapping" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a;"/>
+                        <Label text="Hệ thống sẽ tự động quét các placeholder và gán nguồn dữ liệu phù hợp. Bạn kiểm tra lại bảng 'Placeholder và nguồn dữ liệu', sau đó nhấn 'Lưu template'. Mẫu biểu sẽ lập tức có mặt trong danh sách 'Mẫu xuất' của Workbench." wrapText="true" styleClass="guide-step-desc"/>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+
+        <!-- TAB 4: TIPS & FAST UNINSTALL -->
+        <Tab text="Mẹo &amp; Gỡ cài đặt nhanh">
+            <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-padding: 12;">
+                <VBox spacing="14.0">
+                    <Label text="MẸO NÂNG CAO VÀ THỦ THUẬT TIỆN ÍCH" styleClass="card-title" style="-fx-text-fill: #1d4ed8; -fx-font-size: 12px;"/>
+
+                    <VBox spacing="10.0" styleClass="card">
+                        <HBox alignment="CENTER_LEFT" spacing="8.0">
+                            <Label text="⚡ Gỡ cài đặt Siêu tốc (Fast Uninstallation)" style="-fx-font-weight: bold; -fx-text-fill: #dc2626;"/>
+                        </HBox>
+                        <Label text="Nếu bạn muốn gỡ cài đặt ứng dụng ngay lập tức mà không muốn chờ trình Windows Installer duyệt qua các tệp runtime, bạn có thể thực hiện theo một trong các cách sau:&#10;• Chạy file fast-uninstall.bat hoặc uninstall.bat có sẵn trong thư mục cài đặt ứng dụng.&#10;• Hoặc chạy lệnh PowerShell: .\scripts\uninstall-app.ps1&#10;Kịch bản sẽ tự động tắt các tiến trình nền bị khóa và gỡ sạch sẽ ứng dụng chỉ trong 3 giây." wrapText="true" styleClass="guide-step-desc"/>
+                    </VBox>
+
+                    <VBox spacing="10.0" styleClass="card">
+                        <Label text="🔍 Mẹo tối ưu chất lượng nhận diện OCR" style="-fx-font-weight: bold; -fx-text-fill: #1e3a8a;"/>
+                        <Label text="• Nên sử dụng file PDF gốc hoặc ảnh scan độ phân giải từ 200 đến 300 DPI.&#10;• Đối với tài liệu scan bị xoay hoặc nghiêng, AI tích hợp trong bộ sidecar sẽ tự động hiệu chỉnh góc quay để bóc tách chính xác nhất.&#10;• Với bảng biểu phức tạp trong hóa đơn/chứng từ, hệ thống tự động bóc tách từng dòng item theo dạng mảng dữ liệu." wrapText="true" styleClass="guide-step-desc"/>
+                    </VBox>
+
+                    <VBox spacing="10.0" styleClass="card">
+                        <Label text="🔒 Bảo mật dữ liệu Local-First" style="-fx-font-weight: bold; -fx-text-fill: #059669;"/>
+                        <Label text="Tất cả dữ liệu xử lý, tài liệu tải lên, cơ sở dữ liệu SQLite và các file xuất Word/Excel đều được lưu trữ hoàn toàn trên máy tính của bạn (trong thư mục app-data), không gửi bất kỳ dữ liệu nhạy cảm nào lên đám mây." wrapText="true" styleClass="guide-step-desc"/>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+        </Tab>
+    </TabPane>
+</VBox>
