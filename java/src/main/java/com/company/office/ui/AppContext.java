@@ -5,6 +5,7 @@ import com.company.office.database.DatabaseManager;
 import com.company.office.mcp.McpServer;
 import com.company.office.repository.*;
 import com.company.office.sidecar.SidecarProcess;
+import com.company.office.sidecar.HttpMcpProcess;
 
 import java.io.File;
 
@@ -19,6 +20,7 @@ public class AppContext {
     private final SettingRepository settingRepository;
 
     private final SidecarProcess sidecarProcess;
+    private final HttpMcpProcess httpMcpProcess;
     private final SidecarService sidecarService;
     private final DocumentService documentService;
     private final ExtractionService extractionService;
@@ -64,6 +66,7 @@ public class AppContext {
         this.settingRepository = new SettingRepository(databaseManager);
 
         this.sidecarProcess = new SidecarProcess("python", "python/main.py");
+        this.httpMcpProcess = new HttpMcpProcess();
         this.sidecarService = new SidecarService(sidecarProcess);
 
         this.documentService = new DocumentService(documentRepository, docsDir.getAbsolutePath());
@@ -100,12 +103,14 @@ public class AppContext {
     public void init() {
         // Start Python sidecar process
         sidecarProcess.start();
+        httpMcpProcess.start();
         // Seed default templates if database is empty
         seedDefaults();
     }
 
     public void shutdown() {
         sidecarProcess.stop();
+        httpMcpProcess.stop();
     }
 
     private void seedDefaults() {
@@ -132,6 +137,7 @@ public class AppContext {
     public JobRepository getJobRepository() { return jobRepository; }
     public SettingRepository getSettingRepository() { return settingRepository; }
     public SidecarProcess getSidecarProcess() { return sidecarProcess; }
+    public HttpMcpProcess getHttpMcpProcess() { return httpMcpProcess; }
     public SidecarService getSidecarService() { return sidecarService; }
     public DocumentService getDocumentService() { return documentService; }
     public ExtractionService getExtractionService() { return extractionService; }

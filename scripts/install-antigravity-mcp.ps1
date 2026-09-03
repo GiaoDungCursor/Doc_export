@@ -14,8 +14,6 @@ $OfficeStudioRoot = (Resolve-Path $OfficeStudioRoot).Path
 $serverScript = Join-Path $OfficeStudioRoot "python\mcp_server.py"
 if (-not (Test-Path $serverScript)) { throw "MCP server not found: $serverScript" }
 
-$bundledPython = Join-Path $OfficeStudioRoot "python-runtime\python.exe"
-$pythonCommand = if (Test-Path $bundledPython) { $bundledPython } else { (Get-Command python).Source }
 $configPaths = @(
     (Join-Path $env:USERPROFILE ".gemini\antigravity-ide\mcp_config.json"),
     (Join-Path $env:USERPROFILE ".gemini\config\mcp_config.json")
@@ -34,12 +32,12 @@ foreach ($configPath in $configPaths) {
         $config | Add-Member -MemberType NoteProperty -Name mcpServers -Value ([PSCustomObject]@{}) -Force
     }
     $entry = [PSCustomObject]@{
-        command = $pythonCommand
-        args = @($serverScript)
-        env = [PSCustomObject]@{ OFFICE_STUDIO_ROOT = $OfficeStudioRoot }
+        serverUrl = "http://127.0.0.1:8765/mcp"
+        headers = [PSCustomObject]@{}
     }
     $config.mcpServers | Add-Member -MemberType NoteProperty -Name "office-studio-ai" -Value $entry -Force
-    $config | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $configPath -Encoding UTF8
+    $jsonText = $config | ConvertTo-Json -Depth 20
+    [System.IO.File]::WriteAllText($configPath, $jsonText, (New-Object System.Text.UTF8Encoding($false)))
     Write-Output "Updated: $configPath"
 }
 

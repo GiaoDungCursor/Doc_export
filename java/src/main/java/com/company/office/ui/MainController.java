@@ -34,8 +34,10 @@ public class MainController {
         sidecarStatusLabel.setText(sidecarAlive ? "Sidecar: Online" : "Sidecar: Offline");
         sidecarStatusLabel.setStyle(sidecarAlive ? "-fx-text-fill: #10b981; -fx-font-weight: bold;" : "-fx-text-fill: #ef4444; -fx-font-weight: bold;");
 
-        mcpStatusLabel.setText("MCP: Active (8 Tools)");
-        mcpStatusLabel.setStyle("-fx-text-fill: #818cf8; -fx-font-weight: bold;");
+        boolean mcpReady = ctx.getHttpMcpProcess().isHealthy();
+        mcpStatusLabel.setText(mcpReady ? "MCP HTTP: 127.0.0.1:8765" : "MCP HTTP: Offline");
+        mcpStatusLabel.setStyle(mcpReady ? "-fx-text-fill: #10b981; -fx-font-weight: bold;"
+                : "-fx-text-fill: #ef4444; -fx-font-weight: bold;");
 
         dbStatusLabel.setText("SQLite: Connected");
         dbStatusLabel.setStyle("-fx-text-fill: #38bdf8; -fx-font-weight: bold;");

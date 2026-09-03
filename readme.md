@@ -14,7 +14,7 @@ trên máy; ứng dụng không yêu cầu gửi tài liệu lên dịch vụ đ
 SHA-256 của bản v1.0.1:
 
 ```text
-A055435325E826363B85EFC3F8A46DF89A409ABAA5CA93C746E500E6D0A95DAE
+63633DA1BCCE2A6BF6A16A2CFA0B6C8E5EB7C2EC2070D2F6832F395A16DDE634
 ```
 
 Ứng dụng chưa ký chứng thư số. Nếu Windows SmartScreen cảnh báo, chọn
@@ -24,15 +24,16 @@ A055435325E826363B85EFC3F8A46DF89A409ABAA5CA93C746E500E6D0A95DAE
 
 ### Kết nối MCP với Antigravity
 
-Repo có MCP stdio server tại `python/mcp_server.py`. Server cung cấp tool `ocr_map_export`
-để Gemini gửi đường dẫn ảnh/PDF, bổ sung bản chép `vision_text` nếu cần, tự chọn template
-Việt Nam và xuất Word/Excel trong một lần gọi.
+Khi Office Studio AI đang mở, ứng dụng tự khởi động MCP Streamable HTTP tại
+`http://127.0.0.1:8765/mcp`; health check nằm tại `http://127.0.0.1:8765/health`.
+Server cung cấp tool `ocr_map_export` để Gemini gửi đường dẫn ảnh/PDF, bổ sung bản chép
+`vision_text` nếu cần, tự chọn template Việt Nam và xuất Word/Excel trong một lần gọi.
 
 Trong Antigravity, mở **MCP Servers → Manage MCP Servers → View raw config**, sau đó chép
 cấu hình từ `mcp/antigravity.workspace.mcp_config.json` khi chạy source. Nếu dùng bản cài,
-dùng `mcp/antigravity.mcp_config.example.json`, thay `YOUR_USER` bằng tài khoản Windows rồi
-khởi động lại MCP server. Ảnh đính kèm cần được lưu thành file local để agent truyền
-`source_path` cho tool.
+dùng `mcp/antigravity.mcp_config.example.json`. Cấu hình chỉ dùng `serverUrl`, không khởi
+chạy Python từ Antigravity. Hãy mở Office Studio AI trước rồi bấm **Refresh** trong mục MCP.
+Ảnh đính kèm cần được lưu thành file local để agent truyền `source_path` cho tool.
 
 Có thể cài cấu hình tự động và vẫn giữ nguyên các MCP server đang có bằng lệnh:
 

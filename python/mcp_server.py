@@ -1,6 +1,7 @@
 """Office Studio AI MCP stdio server for Antigravity and other local MCP clients."""
 
 import hashlib
+import argparse
 import json
 import logging
 import os
@@ -9,6 +10,7 @@ import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ROOT = Path(os.environ.get("OFFICE_STUDIO_ROOT", Path(__file__).resolve().parents[1])).resolve()
 PYTHON_DIR = ROOT / "python"
@@ -296,5 +298,74 @@ def main() -> None:
             sys.stdout.flush()
 
 
+class McpHttpHandler(BaseHTTPRequestHandler):
+    server_version = "OfficeStudioMCP/1.0.1"
+
+    def _headers(self, status: int, content_type: str = "application/json; charset=utf-8") -> None:
+        self.send_response(status)
+        self.send_header("Content-Type", content_type)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Accept, Mcp-Session-Id")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.end_headers()
+
+    def do_OPTIONS(self) -> None:
+        self._headers(204)
+
+    def do_GET(self) -> None:
+        if self.path.rstrip("/") == "/health":
+            body = json.dumps({"status": "ok", "server": "office-studio-ai", "port": self.server.server_port}).encode("utf-8")
+            self._headers(200)
+            self.wfile.write(body)
+            return
+        if self.path.rstrip("/") == "/mcp":
+            # Streamable HTTP permits an SSE GET channel; tool calls use POST below.
+            self._headers(200, "text/event-stream")
+            self.wfile.write(b": office-studio-ai ready\n\n")
+            self.wfile.flush()
+            return
+        self._headers(404)
+        self.wfile.write(b'{"error":"not found"}')
+
+    def do_POST(self) -> None:
+        if self.path.rstrip("/") != "/mcp":
+            self._headers(404)
+            self.wfile.write(b'{"error":"not found"}')
+            return
+        try:
+            length = int(self.headers.get("Content-Length", "0"))
+            request = json.loads(self.rfile.read(length).decode("utf-8"))
+            response = handle_request(request)
+            if response is None:
+                self._headers(202)
+                return
+            body = json.dumps(response, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+            self._headers(200)
+            self.wfile.write(body)
+        except Exception as exc:
+            LOGGER.exception("HTTP MCP request failed")
+            body = json.dumps({"jsonrpc": "2.0", "id": None,
+                               "error": {"code": -32700, "message": str(exc)}}).encode("utf-8")
+            self._headers(400)
+            self.wfile.write(body)
+
+    def log_message(self, fmt: str, *args: Any) -> None:
+        LOGGER.info("HTTP %s", fmt % args)
+
+
+def run_http(host: str, port: int) -> None:
+    server = ThreadingHTTPServer((host, port), McpHttpHandler)
+    LOGGER.info("MCP Streamable HTTP listening at http://%s:%d/mcp", host, port)
+    server.serve_forever()
+
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--http", action="store_true", help="Run Streamable HTTP instead of stdio")
+    parser.add_argument("--host", default=os.environ.get("OFFICE_STUDIO_MCP_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, default=int(os.environ.get("OFFICE_STUDIO_MCP_PORT", "8765")))
+    options = parser.parse_args()
+    if options.http:
+        run_http(options.host, options.port)
+    else:
+        main()

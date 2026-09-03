@@ -1,13 +1,8 @@
 {
   "mcpServers": {
     "office-studio-ai": {
-      "command": "python",
-      "args": [
-        "C:\\Users\\admin\\Documents\\CODE\\EX_DOCS\\python\\mcp_server.py"
-      ],
-      "env": {
-        "OFFICE_STUDIO_ROOT": "C:\\Users\\admin\\Documents\\CODE\\EX_DOCS"
-      }
+      "serverUrl": "http://127.0.0.1:8765/mcp",
+      "headers": {}
     }
   }
 }
