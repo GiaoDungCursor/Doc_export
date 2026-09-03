@@ -252,7 +252,7 @@ def handle_request(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return {"jsonrpc": "2.0", "id": request_id, "result": {
             "protocolVersion": requested,
             "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": "office-studio-ai", "version": "1.0.1"},
+            "serverInfo": {"name": "office-studio-ai", "version": "1.0.2"},
         }}
     if method == "ping":
         return {"jsonrpc": "2.0", "id": request_id, "result": {}}
@@ -299,7 +299,7 @@ def main() -> None:
 
 
 class McpHttpHandler(BaseHTTPRequestHandler):
-    server_version = "OfficeStudioMCP/1.0.1"
+    server_version = "OfficeStudioMCP/1.0.2"
 
     def _headers(self, status: int, content_type: str = "application/json; charset=utf-8") -> None:
         self.send_response(status)

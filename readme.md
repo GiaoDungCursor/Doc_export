@@ -6,15 +6,15 @@ trên máy; ứng dụng không yêu cầu gửi tài liệu lên dịch vụ đ
 
 ## Tải bản Windows
 
-- [Tải Office Studio AI v1.0.1 (.exe)](https://github.com/GiaoDungCursor/Doc_export/releases/download/v1.0.1/Office.Studio.AI-1.0.1.exe)
+- [Tải Office Studio AI v1.0.2 (.exe)](https://github.com/GiaoDungCursor/Doc_export/releases/download/v1.0.2/Office.Studio.AI-1.0.2.exe)
 - [Xem tất cả bản phát hành](https://github.com/GiaoDungCursor/Doc_export/releases)
 - Windows 10/11 x64
 - Bản cài đã kèm Java 21, Python và thư viện OCR; người dùng thông thường không cần cài môi trường lập trình.
 
-SHA-256 của bản v1.0.1:
+SHA-256 của bản v1.0.2:
 
 ```text
-63633DA1BCCE2A6BF6A16A2CFA0B6C8E5EB7C2EC2070D2F6832F395A16DDE634
+4294760B880F83697424D523666BF9AB574F889694CF18E2067B246E1DB53CD9
 ```
 
 Ứng dụng chưa ký chứng thư số. Nếu Windows SmartScreen cảnh báo, chọn
@@ -211,13 +211,13 @@ java/.tools/wix314/light.exe
 Từ thư mục gốc repository chạy:
 
 ```powershell
-.\scripts\build-windows.ps1 -Version 1.0.1
+.\scripts\build-windows.ps1 -Version 1.0.2
 ```
 
 Installer được tạo tại:
 
 ```text
-release/Office Studio AI-1.0.1.exe
+release/Office Studio AI-1.0.2.exe
 ```
 
 Script build đóng gói Java runtime, source Python, thư viện OCR trong môi trường
