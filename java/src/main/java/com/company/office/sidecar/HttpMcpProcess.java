@@ -13,16 +13,23 @@ import java.util.concurrent.TimeUnit;
 
 public class HttpMcpProcess {
     private static final Logger logger = LoggerFactory.getLogger(HttpMcpProcess.class);
-    public static final int PORT = 8765;
-    public static final String MCP_URL = "http://127.0.0.1:" + PORT + "/mcp";
-    public static final String HEALTH_URL = "http://127.0.0.1:" + PORT + "/health";
+    public static final int DEFAULT_PORT = 8765;
 
     private Process process;
     private boolean ownsProcess;
+    private int port;
+
+    public HttpMcpProcess() { this(DEFAULT_PORT); }
+
+    public HttpMcpProcess(int port) { this.port = validatePort(port); }
+
+    public synchronized int getPort() { return port; }
+    public synchronized String getMcpUrl() { return "http://127.0.0.1:" + port + "/mcp"; }
+    public synchronized String getHealthUrl() { return "http://127.0.0.1:" + port + "/health"; }
 
     public synchronized void start() {
         if (isHealthy()) {
-            logger.info("MCP HTTP server is already available at {}", MCP_URL);
+            logger.info("MCP HTTP server is already available at {}", getMcpUrl());
             return;
         }
         try {
@@ -31,7 +38,7 @@ public class HttpMcpProcess {
             File bundledPython = new File(root, "python-runtime" + File.separator + "python.exe");
             String python = bundledPython.isFile() ? bundledPython.getAbsolutePath() : "python";
             ProcessBuilder builder = new ProcessBuilder(
-                    python, "-u", script.getAbsolutePath(), "--http", "--host", "127.0.0.1", "--port", String.valueOf(PORT));
+                    python, "-u", script.getAbsolutePath(), "--http", "--host", "127.0.0.1", "--port", String.valueOf(port));
             builder.directory(root);
             builder.environment().put("OFFICE_STUDIO_ROOT", root.getAbsolutePath());
             builder.environment().put("PYTHONUNBUFFERED", "1");
@@ -41,7 +48,7 @@ public class HttpMcpProcess {
             pipe(process.getInputStream(), "mcp-http-stdout");
             for (int attempt = 0; attempt < 40 && !isHealthy(); attempt++) Thread.sleep(250);
             if (!isHealthy()) throw new IllegalStateException("MCP HTTP health check timed out");
-            logger.info("MCP HTTP server ready at {}", MCP_URL);
+            logger.info("MCP HTTP server ready at {}", getMcpUrl());
         } catch (Exception e) {
             stop();
             throw new RuntimeException("Could not start MCP HTTP server", e);
@@ -74,7 +81,7 @@ public class HttpMcpProcess {
 
     public boolean isHealthy() {
         try {
-            HttpURLConnection connection = (HttpURLConnection) URI.create(HEALTH_URL).toURL().openConnection();
+            HttpURLConnection connection = (HttpURLConnection) URI.create(getHealthUrl()).toURL().openConnection();
             connection.setConnectTimeout(350);
             connection.setReadTimeout(350);
             connection.setRequestMethod("GET");
@@ -98,5 +105,27 @@ public class HttpMcpProcess {
         }
         process = null;
         ownsProcess = false;
+    }
+
+    public synchronized void restart(int newPort) {
+        validatePort(newPort);
+        int previousPort = port;
+        stop();
+        port = newPort;
+        try {
+            start();
+        } catch (RuntimeException error) {
+            logger.error("Could not bind MCP port {}, restoring {}", newPort, previousPort);
+            port = previousPort;
+            start();
+            throw error;
+        }
+    }
+
+    private static int validatePort(int value) {
+        if (value < 1024 || value > 65535) {
+            throw new IllegalArgumentException("MCP port must be between 1024 and 65535");
+        }
+        return value;
     }
 }

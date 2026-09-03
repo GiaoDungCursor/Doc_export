@@ -66,7 +66,9 @@ public class AppContext {
         this.settingRepository = new SettingRepository(databaseManager);
 
         this.sidecarProcess = new SidecarProcess("python", "python/main.py");
-        this.httpMcpProcess = new HttpMcpProcess();
+        int savedMcpPort = settingRepository.get("mcp.http.port")
+                .map(AppContext::parseMcpPort).orElse(HttpMcpProcess.DEFAULT_PORT);
+        this.httpMcpProcess = new HttpMcpProcess(savedMcpPort);
         this.sidecarService = new SidecarService(sidecarProcess);
 
         this.documentService = new DocumentService(documentRepository, docsDir.getAbsolutePath());
@@ -150,4 +152,13 @@ public class AppContext {
     public JobService getJobService() { return jobService; }
     public McpServer getMcpServer() { return mcpServer; }
     public McpService getMcpService() { return mcpService; }
+
+    private static int parseMcpPort(String value) {
+        try {
+            int port = Integer.parseInt(value);
+            return port >= 1024 && port <= 65535 ? port : HttpMcpProcess.DEFAULT_PORT;
+        } catch (Exception ignored) {
+            return HttpMcpProcess.DEFAULT_PORT;
+        }
+    }
 }

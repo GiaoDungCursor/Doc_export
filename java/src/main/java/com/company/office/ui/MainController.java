@@ -35,7 +35,7 @@ public class MainController {
         sidecarStatusLabel.setStyle(sidecarAlive ? "-fx-text-fill: #10b981; -fx-font-weight: bold;" : "-fx-text-fill: #ef4444; -fx-font-weight: bold;");
 
         boolean mcpReady = ctx.getHttpMcpProcess().isHealthy();
-        mcpStatusLabel.setText(mcpReady ? "MCP HTTP: 127.0.0.1:8765" : "MCP HTTP: Offline");
+        mcpStatusLabel.setText(mcpReady ? "MCP HTTP: 127.0.0.1:" + ctx.getHttpMcpProcess().getPort() : "MCP HTTP: Offline");
         mcpStatusLabel.setStyle(mcpReady ? "-fx-text-fill: #10b981; -fx-font-weight: bold;"
                 : "-fx-text-fill: #ef4444; -fx-font-weight: bold;");
 

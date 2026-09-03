@@ -8,6 +8,22 @@
       spacing="16.0">
     <Label text="AI Integration Playground (Model Context Protocol - MCP)" styleClass="page-header"/>
 
+    <VBox spacing="10.0" styleClass="card">
+        <Label text="MCP HTTP LOCAL" style="-fx-font-weight: bold; -fx-text-fill: #1d4ed8;"/>
+        <HBox spacing="10.0" alignment="CENTER_LEFT">
+            <Label text="Cổng:"/>
+            <TextField fx:id="mcpPortField" prefWidth="100.0" promptText="8765"/>
+            <Button text="Áp dụng &amp; khởi động lại" onAction="#onApplyPort" styleClass="btn-primary"/>
+            <Button text="Kiểm tra" onAction="#onCheckHttpMcp" styleClass="btn-secondary"/>
+            <Button text="Sao chép config" onAction="#onCopyMcpConfig" styleClass="btn-secondary"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="httpMcpStatusLabel" text="Đang kiểm tra..."/>
+        </HBox>
+        <Label fx:id="mcpEndpointLabel" text="http://127.0.0.1:8765/mcp" style="-fx-font-family: Consolas; -fx-text-fill: #0369a1;"/>
+        <TextArea fx:id="mcpConfigArea" editable="false" prefRowCount="5" wrapText="true"/>
+        <Label text="Khi đổi cổng, ứng dụng sẽ lưu vào SQLite và cập nhật cấu hình Antigravity trên máy này." wrapText="true" style="-fx-text-fill: #64748b;"/>
+    </VBox>
+
     <HBox spacing="16.0" VBox.vgrow="ALWAYS">
         <!-- Tools List -->
         <VBox spacing="8.0" prefWidth="280.0" styleClass="card">
