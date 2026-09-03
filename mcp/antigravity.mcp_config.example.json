@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "office-studio-ai": {
+      "command": "C:\\Users\\YOUR_USER\\AppData\\Local\\Office Studio AI\\app\\python-runtime\\python.exe",
+      "args": [
+        "C:\\Users\\YOUR_USER\\AppData\\Local\\Office Studio AI\\app\\python\\mcp_server.py"
+      ],
+      "env": {
+        "OFFICE_STUDIO_ROOT": "C:\\Users\\YOUR_USER\\AppData\\Local\\Office Studio AI\\app"
+      }
+    }
+  }
+}

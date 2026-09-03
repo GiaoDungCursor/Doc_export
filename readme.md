@@ -14,13 +14,39 @@ trên máy; ứng dụng không yêu cầu gửi tài liệu lên dịch vụ đ
 SHA-256 của bản v1.0.1:
 
 ```text
-9FF61A4F6790C152A6CC38252967DE40E62BF216BE0F84CBD43639CA894EFBFB
+A055435325E826363B85EFC3F8A46DF89A409ABAA5CA93C746E500E6D0A95DAE
 ```
 
 Ứng dụng chưa ký chứng thư số. Nếu Windows SmartScreen cảnh báo, chọn
 **More info → Run anyway** sau khi kiểm tra đúng checksum ở trên.
 
 ## Chức năng chính
+
+### Kết nối MCP với Antigravity
+
+Repo có MCP stdio server tại `python/mcp_server.py`. Server cung cấp tool `ocr_map_export`
+để Gemini gửi đường dẫn ảnh/PDF, bổ sung bản chép `vision_text` nếu cần, tự chọn template
+Việt Nam và xuất Word/Excel trong một lần gọi.
+
+Trong Antigravity, mở **MCP Servers → Manage MCP Servers → View raw config**, sau đó chép
+cấu hình từ `mcp/antigravity.workspace.mcp_config.json` khi chạy source. Nếu dùng bản cài,
+dùng `mcp/antigravity.mcp_config.example.json`, thay `YOUR_USER` bằng tài khoản Windows rồi
+khởi động lại MCP server. Ảnh đính kèm cần được lưu thành file local để agent truyền
+`source_path` cho tool.
+
+Có thể cài cấu hình tự động và vẫn giữ nguyên các MCP server đang có bằng lệnh:
+
+```powershell
+.\scripts\install-antigravity-mcp.ps1
+```
+
+Prompt gợi ý:
+
+```text
+Đọc chính xác ảnh này, gọi office-studio-ai.ocr_map_export với source_path của ảnh,
+truyền phần chữ đã đọc vào vision_text, tự chọn mẫu Việt Nam phù hợp và xuất Word.
+Nếu review_required=true, báo tôi trước khi dùng file chính thức.
+```
 
 - **Bộ Icon nhận diện chuyên nghiệp**: Icon đa kích cỡ (.ico và .png) tích hợp cho trình cài đặt, desktop shortcut, thanh tiêu đề và taskbar.
 - **Hộp Hướng dẫn tương tác (Interactive Guide Box)**: Hướng dẫn nhanh quy trình 4 bước ngay trên màn hình xử lý bóc tách và trang Sổ tay hướng dẫn chuyên biệt.

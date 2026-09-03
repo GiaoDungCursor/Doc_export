@@ -36,6 +36,7 @@ Copy-Item -LiteralPath (Join-Path $root "app-data\templates\vietnam") `
 Copy-Item -LiteralPath (Join-Path $root "scripts\fast-uninstall.bat") -Destination $inputDir -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $root "scripts\gỡ_cài_đặt_nhanh.bat") -Destination $inputDir -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath (Join-Path $root "scripts\uninstall-app.ps1") -Destination $inputDir -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path $root "scripts\install-antigravity-mcp.ps1") -Destination $inputDir -ErrorAction SilentlyContinue
 
 # Ensure icons exist
 $iconPath = Join-Path $root "scripts\icons\app-icon.ico"
