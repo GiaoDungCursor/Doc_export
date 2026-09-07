@@ -38,79 +38,125 @@ class WordExporter:
 
     @classmethod
     def export_full_document(cls, document_data: Dict[str, Any], output_path: str) -> str:
-        """Export full OCR parsed document into a formatted Word file"""
+        """Export full OCR parsed document into an authentic, beautifully formatted Word document."""
+        from docx.enum.table import WD_TABLE_ALIGNMENT
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         doc = docx.Document()
+
+        # Page setup: Standard A4 with Vietnamese administrative margins (Nghị định 30/2020/NĐ-CP)
+        for section in doc.sections:
+            section.page_width = Inches(8.27)
+            section.page_height = Inches(11.69)
+            section.top_margin = Inches(0.79)      # 2.0 cm
+            section.bottom_margin = Inches(0.79)   # 2.0 cm
+            section.left_margin = Inches(0.98)     # 2.5 cm
+            section.right_margin = Inches(0.79)    # 2.0 cm
 
         # Set default styles
         style = doc.styles['Normal']
         font = style.font
         font.name = 'Times New Roman'
         font.size = Pt(12)
-        font.color.rgb = RGBColor(0x1e, 0x29, 0x3b)
+        font.color.rgb = RGBColor(0x00, 0x00, 0x00)
 
-        # Title
-        filename = document_data.get("filename", "VĂN BẢN TRÍCH XUẤT OCR")
-        title_p = doc.add_paragraph()
-        title_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        title_run = title_p.add_run(filename.upper().replace(".PDF", "").replace(".DOCX", ""))
-        title_run.bold = True
-        title_run.font.size = Pt(16)
-        title_run.font.color.rgb = RGBColor(0x1d, 0x4e, 0xd8)
-
-        # Subtitle info
-        sub_p = doc.add_paragraph()
-        sub_p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-        sub_run = sub_p.add_run(f"(Bóc tách tự động bởi PaddleOCR Engine • Tổng số trang: {len(document_data.get('pages', []))})")
-        sub_run.italic = True
-        sub_run.font.size = Pt(10)
-        sub_run.font.color.rgb = RGBColor(0x64, 0x74, 0x8b)
-
-        doc.add_paragraph()  # Spacing
-
-        # Structured Fields Summary (if any)
-        fields = document_data.get("fields", {})
-        if fields and any(v for v in fields.values()):
-            h2 = doc.add_heading("THÔNG TIN TRÍCH XUẤT QUAN TRỌNG", level=2)
-            for f_name, f_val in fields.items():
-                if f_val:
-                    fp = doc.add_paragraph()
-                    r1 = fp.add_run(f"• {f_name.replace('_', ' ').title()}: ")
-                    r1.bold = True
-                    fp.add_run(str(f_val))
-            doc.add_paragraph()
-
-        # Pages and Blocks Content
         pages = document_data.get("pages", [])
+        tables_root = document_data.get("tables", [])
+
         for p_idx, page in enumerate(pages):
-            page_num = page.get("page_number", p_idx + 1)
-            
-            # Page separator header
-            h_page = doc.add_heading(f"--- TRANG {page_num} ---", level=3)
-            h_page.alignment = WD_ALIGN_PARAGRAPH.LEFT
+            if p_idx > 0:
+                doc.add_page_break()
+
+            tables = page.get("tables", [])
+            if not tables and p_idx == 0 and tables_root:
+                tables = tables_root
+
+            # Collect all table cell text so we never duplicate table text as loose paragraphs
+            table_cell_texts = set()
+            for tb in tables:
+                for h in tb.get("headers", []):
+                    if h:
+                        table_cell_texts.add(str(h).strip().upper())
+                for r in tb.get("rows", []):
+                    for c in r:
+                        if c:
+                            table_cell_texts.add(str(c).strip().upper())
 
             blocks = page.get("blocks", [])
+
+            # Filter out watermark noise tokens
+            noise_tokens = {"SOT", "DRL", "THEEGBYDINHHIEOHAHCAEOT", "SOLUTIDN", "GIA", "CHUY", "THANH"}
+
             for b in blocks:
                 text = b.get("text", "").strip()
                 if not text:
                     continue
 
+                text_upper = text.upper()
+                if text_upper in noise_tokens:
+                    continue
+
+                # If this text is already part of the table, skip it!
+                if table_cell_texts:
+                    if text_upper in table_cell_texts or any(text_upper in c for c in table_cell_texts if len(c) > 5):
+                        continue
+
                 tag = b.get("tag", "Text")
                 p = doc.add_paragraph()
-                
-                if tag == "Title":
-                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER if len(text) < 40 else WD_ALIGN_PARAGRAPH.LEFT
+                p.paragraph_format.line_spacing = 1.15
+
+                # Detect Main Document Title
+                is_main_title = any(k in text_upper for k in [
+                    "HỢP ĐỒNG LAO ĐỘNG", "HOP DONG LAO DONG",
+                    "DANH MỤC BẢN VẼ", "DANH MUC BAN VE",
+                    "BIÊN BẢN", "BÁO CÁO", "GIẤY MỜI", "THÔNG BÁO", "QUYẾT ĐỊNH"
+                ]) and len(text) < 60
+
+                # Detect Sub-title or Contract number: (Số: ...)
+                is_sub_num = bool(re.match(r'^\(?\s*(?:Số|So)\s*[:#]', text, re.I))
+
+                # Detect Section Headers (BÊN A, BÊN B, I., II., v.v.)
+                is_section_header = bool(re.match(r'^(?:BÊN\s+[AB]|BEN\s+[AB]|[IVXLCDM]+\.|\d+\.)', text, re.I))
+
+                # Detect National Motto or Agency Header
+                is_national_header = "CỘNG HÒA" in text_upper or "CONG HOA" in text_upper or "ĐỘC LẬP" in text_upper
+
+                if is_main_title:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p.paragraph_format.space_before = Pt(12)
+                    p.paragraph_format.space_after = Pt(4)
+                    run = p.add_run(text.upper())
+                    run.bold = True
+                    run.font.size = Pt(14)
+                elif is_sub_num:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p.paragraph_format.space_after = Pt(8)
+                    run = p.add_run(text)
+                    run.italic = True
+                    run.font.size = Pt(11)
+                elif is_section_header:
+                    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    p.paragraph_format.space_before = Pt(8)
+                    p.paragraph_format.space_after = Pt(2)
                     run = p.add_run(text)
                     run.bold = True
-                    run.font.size = Pt(13)
-                    run.font.color.rgb = RGBColor(0x0f, 0x17, 0x2a)
-                else:
-                    p.paragraph_format.line_spacing = 1.15
-                    p.paragraph_format.space_after = Pt(4)
+                    run.font.size = Pt(12)
+                elif is_national_header:
+                    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    p.paragraph_format.space_after = Pt(2)
                     run = p.add_run(text)
+                    run.bold = True
+                    run.font.size = Pt(11)
+                else:
+                    p.paragraph_format.space_after = Pt(4)
+                    # If multiple columns in a row (e.g. separated by 4+ spaces)
+                    cols = [c.strip() for c in re.split(r'\s{4,}|\t', text) if c.strip()]
+                    if len(cols) >= 2:
+                        formatted_text = "        ".join(cols)
+                        run = p.add_run(formatted_text)
+                    else:
+                        run = p.add_run(text)
 
-            # Tables in page (if any)
-            tables = page.get("tables", [])
+            # Tables in page
             for tb in tables:
                 headers = tb.get("headers", [])
                 rows = tb.get("rows", [])
@@ -118,23 +164,42 @@ class WordExporter:
                     cols_count = max(len(headers), max((len(r) for r in rows), default=1))
                     w_table = doc.add_table(rows=1 if headers else 0, cols=cols_count)
                     w_table.style = 'Table Grid'
+                    w_table.alignment = WD_TABLE_ALIGNMENT.CENTER
                     
                     if headers:
                         hdr_cells = w_table.rows[0].cells
                         for i, h in enumerate(headers):
                             if i < len(hdr_cells):
                                 hdr_cells[i].text = str(h)
-                                for run in hdr_cells[i].paragraphs[0].runs:
+                                p_h = hdr_cells[i].paragraphs[0]
+                                p_h.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                                for run in p_h.runs:
                                     run.bold = True
+                                    run.font.size = Pt(11)
+                                cls._set_cell_background(hdr_cells[i], "F1F5F9")
                     for r in rows:
                         row_cells = w_table.add_row().cells
                         for i, val in enumerate(r):
                             if i < len(row_cells):
                                 row_cells[i].text = str(val)
+                                p_c = row_cells[i].paragraphs[0]
+                                if i == 0 or i == 2:  # STT or Code column -> Center
+                                    p_c.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                                else:
+                                    p_c.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                                for run in p_c.runs:
+                                    run.font.size = Pt(10.5)
                     doc.add_paragraph()
 
         doc.save(output_path)
         return output_path
+
+    @staticmethod
+    def _set_cell_background(cell, color_hex: str):
+        from docx.oxml import parse_xml
+        from docx.oxml.ns import nsdecls
+        shading_elm = parse_xml(f'<w:shd {nsdecls("w")} w:fill="{color_hex}"/>')
+        cell._tc.get_or_add_tcPr().append(shading_elm)
 
     @classmethod
     def _replace_in_paragraph(cls, paragraph, context: Dict[str, Any]):

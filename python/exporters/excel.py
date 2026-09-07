@@ -47,13 +47,19 @@ class ExcelExporter:
         ws_fields.append(["STT", "Tên trường", "Giá trị bóc tách", "Kiểu dữ liệu", "Độ tin cậy", "Trạng thái"])
         cls._format_header(ws_fields, 4, 6, styles)
 
-        for index, (name, value) in enumerate((document_data.get("fields") or {}).items(), 1):
-            detail = details.get(name) or {}
+        field_items = [(k, v) for k, v in (document_data.get("fields") or {}).items() if k.lower() not in ["content", "raw_text", "full_text"]]
+        for index, (name, val_entry) in enumerate(field_items, 1):
+            if isinstance(val_entry, dict):
+                detail = details.get(name) or val_entry
+                val = val_entry.get("value")
+            else:
+                detail = details.get(name) or {}
+                val = val_entry
             data_type = str(detail.get("data_type") or "string").lower()
             confidence = cls._confidence(detail.get("confidence"))
             validated = bool(detail.get("validated", confidence >= 0.85))
             error = detail.get("validation_error")
-            typed_value = cls._typed_value(value, data_type)
+            typed_value = cls._typed_value(val, data_type)
             ws_fields.append([
                 index,
                 detail.get("label") or name.replace("_", " ").title(),
@@ -73,7 +79,10 @@ class ExcelExporter:
         cls._add_blocks_sheet(wb, document_data.get("pages") or [], styles)
         tables = list(cls._iter_tables(document_data))
         for index, table in enumerate(tables, 1):
-            cls._add_table_sheet(wb, table, index, styles)
+            table_ws = cls._add_table_sheet(wb, table, index, styles)
+            wb._sheets.insert(index - 1, wb._sheets.pop(-1))
+        if tables:
+            wb.active = 0
         cls._add_quality_sheet(wb, document_data, details, tables, styles)
 
         wb.save(output_path)
@@ -120,6 +129,7 @@ class ExcelExporter:
             ws.column_dimensions[get_column_letter(column)].width = min(max(12, longest + 2), 40)
         ws.freeze_panes = "A2"
         ws.auto_filter.ref = f"A1:{get_column_letter(width)}{max(1, ws.max_row)}"
+        return ws
 
     @classmethod
     def _add_quality_sheet(cls, wb, document_data, details, tables, styles):

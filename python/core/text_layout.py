@@ -39,6 +39,12 @@ def normalize_block_text(text: str) -> str:
 def normalize_document_pages(pages) -> str:
     page_texts = []
     for page in pages:
+        if getattr(page, "extraction_method", "unknown") == "native_text":
+            # Preserve the PDF text layer byte-for-byte at the Unicode string level.
+            # Positioned blocks remain available for click-to-highlight mapping.
+            if page.text:
+                page_texts.append(page.text)
+            continue
         for block in page.blocks:
             block.text = normalize_block_text(block.text)
         page.text = ("\n".join(block.text for block in page.blocks if block.text)

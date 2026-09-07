@@ -98,6 +98,12 @@
                 <Button text="Toàn trang" onAction="#onFitPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
                 <Button text="100%" onAction="#onZoomReset" styleClass="tool-btn" style="-fx-padding: 3 6;"/>
 
+                <Separator orientation="VERTICAL" style="-fx-padding: 0 2;"/>
+
+                <!-- Rotate Controls -->
+                <Button text="⟲ Xoay trái" onAction="#onRotateLeft" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Button text="⟳ Xoay phải" onAction="#onRotateRight" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+
                 <Region HBox.hgrow="ALWAYS"/>
 
                 <CheckBox fx:id="showBboxesCheckbox" text="Hiện tất cả khung" selected="false" style="-fx-text-fill: #475569; -fx-font-size: 11px;"/>

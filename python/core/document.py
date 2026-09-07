@@ -66,6 +66,7 @@ class DocumentPage(BaseModel):
     text: str = ""
     blocks: List[Block] = Field(default_factory=list)
     tables: List[Table] = Field(default_factory=list)
+    extraction_method: str = "unknown"  # native_text or ocr
 
 class DocumentMetadata(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))

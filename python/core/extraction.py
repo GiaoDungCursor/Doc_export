@@ -53,12 +53,14 @@ class ExtractionPipeline:
                 tables.extend(page.tables)
 
                 # Check if page has digital text
-                has_digital_text = bool(page.text and len(page.text.strip()) > 20 and len(page.blocks) > 0)
+                # Any real native text block wins over OCR. Even a sparse cover or
+                # one-line PDF must retain its exact Unicode text layer.
+                has_digital_text = bool(page.text and page.text.strip() and page.blocks)
 
-                if force_ocr or not has_digital_text:
+                if not has_digital_text:
                     # Run PaddleOCR v4 on scanned page
                     if page.image_path and os.path.exists(page.image_path):
-                        ocr_blocks, ocr_tables = self.ocr_engine.analyze_image(page.image_path)
+                        ocr_blocks, ocr_tables = self.ocr_engine.analyze_image(page.image_path, save_oriented_path=page.image_path)
                         if ocr_blocks:
                             sys.stderr.write(f"[PaddleOCR v4] Scanned page {p_idx + 1}: extracted {len(ocr_blocks)} text blocks\n")
                             page.blocks = ocr_blocks
@@ -66,13 +68,16 @@ class ExtractionPipeline:
                             tables.extend(ocr_tables)
                             ocr_text = "\n".join([b.text for b in ocr_blocks])
                             page.text = ocr_text
+                            page.extraction_method = "ocr"
                             raw_text_parts.append(ocr_text)
                         else:
                             raw_text_parts.append(page.text)
                     else:
                         raw_text_parts.append(page.text)
                 else:
-                    # Fast digital path
+                    # Lossless digital path. force_ocr is intentionally ignored for
+                    # pages with a native text layer so re-extraction cannot corrupt it.
+                    page.extraction_method = "native_text"
                     raw_text_parts.append(page.text)
 
         elif file_ext in [".png", ".jpg", ".jpeg", ".tiff", ".bmp"]:
@@ -81,8 +86,10 @@ class ExtractionPipeline:
             cached_img_path = os.path.abspath(os.path.join(self.cache_dir, img_cache_name))
             shutil.copyfile(file_path, cached_img_path)
 
-            ocr_blocks, image_tables = self.ocr_engine.analyze_image(file_path)
+            ocr_blocks, image_tables = self.ocr_engine.analyze_image(file_path, save_oriented_path=cached_img_path)
             sys.stderr.write(f"[PaddleOCR v4] Image {filename}: extracted {len(ocr_blocks)} text blocks\n")
+            if not image_tables:
+                image_tables = self._detect_tables_from_blocks(ocr_blocks)
 
             ocr_text = "\n".join([b.text for b in ocr_blocks])
             raw_text_parts.append(ocr_text)
@@ -91,7 +98,8 @@ class ExtractionPipeline:
                 image_path=cached_img_path,
                 text=ocr_text,
                 blocks=ocr_blocks,
-                tables=image_tables
+                tables=image_tables,
+                extraction_method="ocr"
             )
             pages.append(page)
             tables.extend(image_tables)
@@ -131,6 +139,7 @@ class ExtractionPipeline:
                 if sum(bool(re.search(pattern, text_lower)) for pattern in contract_patterns) >= 2:
                     inferred_type = "contract"
                 elif any(k in text_lower for k in ["báo cáo", "bao cao", "report"]): inferred_type = "report"
+                elif tables: inferred_type = "table"
 
         # Extract structured fields with bounding box mapping
         fields = self._extract_fields(pages, full_raw_text, inferred_type)
@@ -141,6 +150,19 @@ class ExtractionPipeline:
         table_scores = [table.confidence for table in tables if table.confidence > 0]
         quality_scores = conf_scores + ocr_scores + table_scores
         avg_conf = sum(quality_scores) / len(quality_scores) if quality_scores else 0.0
+
+        # OCR probability alone is over-confident when Vietnamese tone marks or
+        # characters are decoded incorrectly. Penalize obvious fused/gibberish
+        # tokens so the UI's confidence better reflects the amount of review needed.
+        suspicious_blocks = 0
+        for page in pages:
+            for block in page.blocks:
+                tokens = re.findall(r"[^\W\d_]+", block.text or "", flags=re.UNICODE)
+                if any(len(token) >= 24 for token in tokens):
+                    suspicious_blocks += 1
+        if ocr_scores:
+            suspicious_ratio = suspicious_blocks / len(ocr_scores)
+            avg_conf *= max(0.55, 1.0 - suspicious_ratio * 2.5)
 
         doc = Document(
             document_type=inferred_type,
@@ -263,18 +285,45 @@ class ExtractionPipeline:
 
         elif doc_type == "contract":
             # Contract specific fields
+            title_cand = next((l for l in lines if re.search(r'\b(hợp đồng|hop dong)\b', l, re.I)), lines[0] if lines else "Hợp đồng")
+            fields["title"] = DocumentField(
+                name="title", label="Tên hợp đồng", value=title_cand, confidence=0.95
+            )
+
             for line in lines:
-                m = re.search(r'(?:so\s*h[o\u00f3\u00f2\u00f5\u1ecd\u00f4\u1ed1\u1ed3\u1ed7\u1ed9a\u00e1\u00e0\u00e3\u1ea1]\s*\u0111[o\u01a1\u1edb\u1edd\u1ee1\u1ee3e\u00eai]ng|s[o\u00f3\u00f2\u00f5\u1ecd\u00f4\u1ed1\u1ed3\u1ed7\u1ed9]\s*[:#]|contract\s*no)\s*[:#]?\s*([A-Za-z0-9\-_/]+)', line, re.IGNORECASE)
+                m = re.search(r'[\(\[]?\s*(?:so\s*h[o\u00f3\u00f2\u00f5\u1ecd\u00f4\u1ed1\u1ed3\u1ed7\u1ed9a\u00e1\u00e0\u00e3\u1ea1]\s*\u0111[o\u01a1\u1edb\u1edd\u1ee1\u1ee3e\u00eai]ng|s[o\u00f3\u00f2\u00f5\u1ecd\u00f4\u1ed1\u1ed3\u1ed7\u1ed9]|contract\s*no)\s*[:#]?\s*([A-Za-z0-9\-_\/.]+)', line, re.IGNORECASE)
                 if m:
+                    c_num = m.group(1).rstrip(')] ')
                     bbox, p_num = find_line_bbox(line)
                     fields["contract_number"] = DocumentField(
-                        name="contract_number", label="Số hợp đồng", value=m.group(1).strip(),
+                        name="contract_number", label="Số hợp đồng", value=c_num,
                         raw_value=line, confidence=0.95, source_bbox=bbox, page_number=p_num
                     )
                     break
-            fields["title"] = DocumentField(
-                name="title", label="Tên hợp đồng", value=lines[0] if lines else "Hợp đồng", confidence=0.9
-            )
+
+            for line in lines:
+                m_a = re.search(r'(?:Ten\s*Don\s*vi|Tên\s*Đơn\s*vị)\s*[:]\s*(.+)', line, re.I)
+                if m_a:
+                    fields["party_a"] = DocumentField(
+                        name="party_a", label="Bên A (Người sử dụng lao động)", value=m_a.group(1).strip(), confidence=0.95
+                    )
+                    break
+
+            for line in lines:
+                m_b = re.search(r'(?:Ho\s*va\s*ten|Họ\s*và\s*tên)\s*[:]\s*([^|]+)', line, re.I)
+                if m_b:
+                    b_val = re.split(r'\s{3,}|[|]', m_b.group(1))[0].strip()
+                    fields["party_b"] = DocumentField(
+                        name="party_b", label="Bên B (Người lao động)", value=b_val, confidence=0.95
+                    )
+                    break
+
+            date_m = re.search(r'(?:ngay|ngày)\s+(\d{1,2})\s+(?:thang|tháng)\s+(\d{1,2})\s+(?:nam|năm)\s+(\d{4})', text, re.I)
+            if date_m:
+                d, m, y = date_m.groups()
+                fields["date"] = DocumentField(
+                    name="date", label="Ngày ký", value=f"{int(d):02d}/{int(m):02d}/{y}", confidence=0.95
+                )
 
         elif doc_type in {"official", "decision", "report", "proposal", "minutes", "receipt",
                         "notice", "plan", "invitation"}:
@@ -394,6 +443,15 @@ class ExtractionPipeline:
             "academic_qualification": ("Học hàm, học vị", r'(?im)^\s*-?\s*học\s+hàm[^:]*:\s*([^\n]+)'),
             "assigned_duties": ("Quyền hạn, nhiệm vụ", r'(?im)^\s*1\.\s*quyền\s+hạn[^:]*:\s*([^\n]+)'),
             "achievements": ("Thành tích đạt được", r'(?im)^\s*2\.\s*thành\s+tích[^:]*:\s*([^\n]+)'),
+            # Banking, Accounts & FATCA Registration Forms
+            "form_code": ("Mã biểu mẫu", r'(?im)^\s*-?\s*(?:Mã hiệu|Mẫu số|Biểu mẫu|BM\d+)[^:]*:\s*([^\n]+)'),
+            "fatca_us_entity": ("Tổ chức tại Mỹ", r'(?im)1\.\s*Tổ chức được thành lập hay có tổ chức hoạt động tại Mỹ hay không\??[\s\S]*?(Không|Có)'),
+            "fatca_foreign_institution": ("Định chế tài chính ngoài Mỹ", r'(?im)2\.\s*Tổ chức có được xem như một Định chế tài chính ngoài Mỹ[\s\S]*?(Không|Có)'),
+            "fatca_us_investor": ("Nhà đầu tư Mỹ", r'(?im)3\.\s*Tổ chức có nhà đầu tư Mỹ hay không\??[\s\S]*?(Không|Có)'),
+            "account_type": ("Loại tài khoản", r'(?im)Loại tài khoản\s*:\s*([^\n]+)'),
+            "currency": ("Loại tiền tệ", r'(?im)Loại tiền\s*:\s*([^\n]+)'),
+            "statement_frequency": ("Tần suất nhận sổ phụ", r'(?im)Tần suất nhận sổ phụ\s*:\s*([^\n]+)'),
+            "delivery_address": ("Địa chỉ nhận", r'(?im)(?:Qua bưu điện,\s*địa chỉ nhận|địa chỉ nhận)\s*:\s*([^\n]+)'),
         }
         for name, (label, pattern) in form_patterns.items():
             match = re.search(pattern, text)
@@ -401,6 +459,109 @@ class ExtractionPipeline:
                 continue
             value = match.group(1).strip(" .…\t")
             if value:
-                fields[name] = DocumentField(name=name, label=label, value=value, confidence=0.90)
+                fields[name] = DocumentField(name=name, label=label, value=value, confidence=0.92)
 
         return fields
+
+    def _detect_tables_from_blocks(self, blocks) -> list:
+        if not blocks:
+            return []
+        strict_keywords = ['stt', 'ten ban ve', 'ten hang', 'noi dung', 'ky hieu ban ve', 'so luong', 'don gia', 'thanh tien', 'item no', 'description']
+        header_blocks = []
+        for b in blocks:
+            if not b.bbox or not b.text:
+                continue
+            t_lower = b.text.lower()
+            if any(re.search(r'\b' + re.escape(k) + r'\b', t_lower) for k in strict_keywords):
+                header_blocks.append(b)
+
+        header_groups = []
+        for hb in header_blocks:
+            placed = False
+            for grp in header_groups:
+                avg_y = sum(b.bbox.y0 for b in grp) / len(grp)
+                if abs(hb.bbox.y0 - avg_y) < 60:
+                    grp.append(hb)
+                    placed = True
+                    break
+            if not placed:
+                header_groups.append([hb])
+
+        valid_groups = [g for g in header_groups if len(g) >= 2]
+        if not valid_groups:
+            return []
+
+        best_group = max(valid_groups, key=len)
+        best_group.sort(key=lambda b: b.bbox.x0)
+
+        raw_headers = [b.text.strip() for b in best_group]
+        headers = []
+        for h in raw_headers:
+            h_clean = re.sub(r'[^a-zA-Z0-9]', '', h.lower())
+            if 'tenbanve' in h_clean or 'tenbv' in h_clean:
+                headers.append("Tên bản vẽ")
+            elif h_clean == 'stt':
+                headers.append("STT")
+            elif 'kyhieu' in h_clean:
+                headers.append("Ký hiệu")
+            elif 'ghichu' in h_clean:
+                headers.append("Ghi chú")
+            else:
+                headers.append(h)
+
+        col_x = [b.bbox.x0 for b in best_group]
+        header_bottom = max(b.bbox.y1 for b in best_group)
+
+        below = [b for b in blocks if b.bbox and b.bbox.y0 >= header_bottom - 10]
+        row_groups = []
+        for b in below:
+            placed = False
+            for rg in row_groups:
+                avg_y = sum(x.bbox.y0 for x in rg) / len(rg)
+                if abs(b.bbox.y0 - avg_y) < 35:
+                    rg.append(b)
+                    placed = True
+                    break
+            if not placed:
+                row_groups.append([b])
+
+        row_groups.sort(key=lambda rg: sum(b.bbox.y0 for b in rg) / len(rg))
+
+        table_rows = []
+        for rg in row_groups:
+            row_vals = [''] * len(headers)
+            for b in rg:
+                best_col = 0
+                best_dist = float('inf')
+                for ci, cx in enumerate(col_x):
+                    dist = abs(b.bbox.x0 - cx)
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_col = ci
+                if row_vals[best_col]:
+                    row_vals[best_col] += ' ' + b.text.strip()
+                else:
+                    row_vals[best_col] = b.text.strip()
+            if any(v.strip() for v in row_vals):
+                table_rows.append(row_vals)
+
+        if len(table_rows) >= 2:
+            if headers and headers[0].upper() == 'STT':
+                for idx, r in enumerate(table_rows, 1):
+                    if not r[0].strip():
+                        r[0] = str(idx)
+            table_bbox = BoundingBox(
+                x0=min(b.bbox.x0 for b in best_group),
+                y0=min(b.bbox.y0 for b in best_group),
+                x1=max(b.bbox.x1 for b in best_group + [b for rg in row_groups for b in rg]),
+                y1=max(b.bbox.y1 for b in best_group + [b for rg in row_groups for b in rg]),
+            )
+            detected_table = Table(
+                name="Bảng dữ liệu trích xuất",
+                headers=headers,
+                rows=table_rows,
+                bbox=table_bbox,
+                confidence=0.90
+            )
+            return [detected_table]
+        return []

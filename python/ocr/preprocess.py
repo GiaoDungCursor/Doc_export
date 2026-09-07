@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageOps
 import os
 from typing import Union, Tuple
 
@@ -20,25 +20,35 @@ class ImagePreprocessor:
         if isinstance(image_input, str):
             if not os.path.exists(image_input):
                 raise FileNotFoundError(f"Image not found at {image_input}")
-            # Unicode-safe image loading for Windows paths with Vietnamese characters
+            # Apply the camera/phone EXIF orientation once before OCR. OpenCV ignores
+            # this metadata and can otherwise display/OCR the same pixels differently.
             try:
-                with open(image_input, "rb") as f:
-                    file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
-                    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-            except Exception as e:
+                with Image.open(image_input) as source:
+                    pil_img = ImageOps.exif_transpose(source).convert("RGB")
+                    img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2BGR)
+            except Exception:
                 img = None
+
+            # Unicode-safe OpenCV fallback for formats Pillow cannot decode.
+            try:
+                if img is None:
+                    with open(image_input, "rb") as f:
+                        file_bytes = np.frombuffer(f.read(), dtype=np.uint8)
+                        img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+            except Exception:
+                pass
 
             if img is None:
                 # Fallback to PIL
                 try:
-                    pil_img = Image.open(image_input).convert("RGB")
+                    pil_img = ImageOps.exif_transpose(Image.open(image_input)).convert("RGB")
                     img = np.array(pil_img)
                     img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
                 except Exception as ex:
                     raise ValueError(f"Could not load image from path: {image_input}") from ex
             return img
         elif isinstance(image_input, Image.Image):
-            rgb = np.array(image_input.convert("RGB"))
+            rgb = np.array(ImageOps.exif_transpose(image_input).convert("RGB"))
             return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
         elif isinstance(image_input, np.ndarray):
             if len(image_input.shape) == 2:
@@ -92,9 +102,11 @@ class ImagePreprocessor:
 
     @classmethod
     def preprocess_for_ocr(cls, image_input: Union[str, np.ndarray, Image.Image]) -> np.ndarray:
-        """Complete preprocessing pipeline before OCR"""
+        """Load an OCR-ready image without destroying small Vietnamese marks.
+
+        RapidOCR performs its own resize and normalization. Converting a phone
+        photo to grayscale and applying CLAHE here made thin tone marks disappear
+        or merge with the glyph, especially on small form text.
+        """
         img = cls.load_image(image_input)
-        gray = cls.to_grayscale(img)
-        gray, angle = cls.deskew(gray)
-        gray = cls.enhance_contrast(gray)
-        return gray
+        return img

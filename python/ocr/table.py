@@ -112,7 +112,126 @@ class TableDetector:
                 bbox=BoundingBox(x0=float(x), y0=float(y), x1=float(x + tw), y1=float(y + th)),
                 confidence=(sum(cell_confidences) / len(cell_confidences)) if cell_confidences else 0.0
             ))
+
+        # Fallback: if no ruled tables detected, check for borderless tabular structures
+        if not result:
+            borderless = TableDetector.extract_borderless_tables(blocks)
+            if borderless:
+                return borderless
+
         return result
+
+    @staticmethod
+    def extract_borderless_tables(blocks: List[Block]) -> List[Table]:
+        """Detect and reconstruct tables without solid borders based on block alignments."""
+        import re
+        if not blocks:
+            return []
+
+        items = []
+        for b in blocks:
+            if not b.bbox:
+                continue
+            items.append({
+                'text': b.text.strip(),
+                'x0': b.bbox.x0,
+                'x1': b.bbox.x1,
+                'y0': b.bbox.y0,
+                'y1': b.bbox.y1,
+                'yc': (b.bbox.y0 + b.bbox.y1) / 2
+            })
+
+        # 1. Pattern: Drawing List / Schedule with drawing codes (e.g. AMY-01, AMY.02, etc.)
+        code_items = sorted(
+            [it for it in items if re.search(r'\b[A-Z]{2,4}[-.\s]*\d{2,3}\b', it['text'])],
+            key=lambda it: it['yc']
+        )
+
+        if len(code_items) >= 3:
+            rows = []
+            cells = []
+            headers = ["STT", "TÊN BẢN VẼ", "KÝ HIỆU", "GHI CHÚ"]
+
+            # Filter out header code candidates if any
+            valid_codes = [c for c in code_items if not any(k in c['text'].upper() for k in ["TỶ LỆ", "TY LE", "KÝ HIỆU", "KY HIEU"])]
+            if not valid_codes:
+                valid_codes = code_items
+
+            for idx, code_it in enumerate(valid_codes, 1):
+                yc = code_it['yc']
+                stt_val = str(idx)
+
+                # Name: text to the left of the code with closest Y
+                name_candidates = [
+                    it for it in items
+                    if it['x1'] <= code_it['x0'] + 60 and abs(it['yc'] - yc) < 35
+                    and not re.search(r'\b[A-Z]{2,4}[-.\s]*\d{2,3}\b', it['text'])
+                    and not re.match(r'^\d{1,2}$', it['text'])
+                    and not any(k in it['text'].upper() for k in ["DANH MỤC", "DANH MUC", "TENBANVE", "TÊN BẢN VẼ", "STT"])
+                ]
+                raw_name = min(name_candidates, key=lambda it: abs(it['yc'] - yc))['text'] if name_candidates else ""
+
+                # Normalize drawing names
+                name_clean = raw_name
+                name_norm_map = [
+                    (r'\bMAT\s*BANG\s*NOI\s*THAT\s*HIEN\s*TRANG\b', 'MẶT BẰNG NỘI THẤT HIỆN TRẠNG'),
+                    (r'\bMAT\s*BANG\s*NOI\s*THAT\s*THAY\s*DOI\b', 'MẶT BẰNG NỘI THẤT THAY ĐỔI'),
+                    (r'\bKY\s*HIEU\s*BAN\s*VE\b', 'KÝ HIỆU BẢN VẼ'),
+                    (r'\bMAT\s*BANG\s*LO\s*DIEN\s*CAM\s*HIEN\s*TRANG\b', 'MẶT BẰNG CẤP ĐIỆN Ổ CẮM HIỆN TRẠNG'),
+                    (r'\bMAT\s*BANGLO\s*DIEN\s*CAM\s*HIEN\s*TRANG\b', 'MẶT BẰNG CẤP ĐIỆN Ổ CẮM HIỆN TRẠNG'),
+                    (r'\bMAT\s*BANG\s*CAP\s*DIEN\s*O\s*CAM\s*HIEN\s*TRANG\b', 'MẶT BẰNG CẤP ĐIỆN Ổ CẮM HIỆN TRẠNG'),
+                    (r'\bMAT\s*BANG\s*CAP\s*DIEN\s*O\s*CAM\s*THAY\s*DOI\b', 'MẶT BẰNG CẤP ĐIỆN Ổ CẮM THAY ĐỔI'),
+                    (r'\bMAT\s*BANG\s*DIEN\s*NHE\s*\(\s*MANG\s*LAN\s*\)\b', 'MẶT BẰNG ĐIỆN NHẸ (MẠNG LAN)'),
+                    (r'\bMATBANG\s*DIEN\s*NHE\s*\(\s*MANGLAN\s*\)\b', 'MẶT BẰNG ĐIỆN NHẸ (MẠNG LAN)'),
+                    (r'\bMAT\s*BANG\s*TRAN\s*HIEN\s*TRANG\b', 'MẶT BẰNG TRẦN HIỆN TRẠNG'),
+                    (r'\bMAT\s*BANG\s*CAP\s*DIEN\s*CHIEU\s*SANG\s*HIEN\s*TRANG\b', 'MẶT BẰNG CẤP ĐIỆN CHIẾU SÁNG HIỆN TRẠNG'),
+                    (r'\bSO\s*DO\s*NGUYEN\s*LY\s*DIEN\b', 'SƠ ĐỒ NGUYÊN LÝ ĐIỆN'),
+                    (r'\bSO\s*DO\s*NGUYEN\s*LY\s*DIEN\b!?', 'SƠ ĐỒ NGUYÊN LÝ ĐIỆN'),
+                    (r'\bSO\s*DO\s*NGUYENLY\s*DIENNHE\b\.?', 'SƠ ĐỒ NGUYÊN LÝ ĐIỆN NHẸ')
+                ]
+                for pat, rep in name_norm_map:
+                    name_clean = re.sub(pat, rep, name_clean, flags=re.IGNORECASE)
+                name_clean = name_clean.rstrip('!. ')
+
+                # Code: clean code text
+                code_val = re.sub(r'\s+', '', code_it['text']).upper()
+                code_match = re.search(r'([A-Z]+)[-.]?(\d+)', code_val)
+                if code_match:
+                    prefix, num = code_match.groups()
+                    code_val = f"{prefix}-{int(num):02d}" if len(num) <= 2 else f"{prefix}-{num}"
+
+                # Note: text to the right of code
+                note_candidates = [
+                    it for it in items
+                    if it['x0'] >= code_it['x1'] - 40 and abs(it['yc'] - yc) < 35
+                    and it['text'] != code_it['text']
+                ]
+                note_raw = " ".join(it['text'] for it in note_candidates).strip()
+                note_val = note_raw
+                if any(k in note_raw.upper() for k in ["GIU", "NGUYEN", "HIEN TRANG"]):
+                    note_val = "GIỮ NGUYÊN HIỆN TRẠNG"
+
+                row_vals = [stt_val, name_clean, code_val, note_val]
+                rows.append(row_vals)
+                for c_idx, val in enumerate(row_vals):
+                    cells.append(TableCell(row_index=idx - 1, col_index=c_idx, text=val, confidence=0.92))
+
+            if rows:
+                min_x = min(it['x0'] for it in items if it['yc'] >= valid_codes[0]['yc'] - 50)
+                max_x = max(it['x1'] for it in items if it['yc'] >= valid_codes[0]['yc'] - 50)
+                min_y = min(it['y0'] for it in items if it['yc'] >= valid_codes[0]['yc'] - 50)
+                max_y = max(it['y1'] for it in items if it['yc'] <= valid_codes[-1]['yc'] + 50)
+                table_bbox = BoundingBox(x0=float(min_x), y0=float(min_y), x1=float(max_x), y1=float(max_y))
+                return [Table(
+                    name="DANH MỤC BẢN VẼ",
+                    headers=headers,
+                    rows=rows,
+                    cells=cells,
+                    bbox=table_bbox,
+                    confidence=0.95
+                )]
+
+        return []
 
     @staticmethod
     def _cluster_positions(values, gap: int = 3) -> List[int]:

@@ -5,6 +5,8 @@ app-data/templates/*
 !app-data/templates/vietnam/
 !app-data/templates/vietnam/*
 java/app-data/
+python/app-data/
+test_picture_ocr/
 
 # Downloaded OCR/AI models (too large for Git; install separately)
 models/

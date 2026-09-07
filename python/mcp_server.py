@@ -170,6 +170,25 @@ def _export(document: Dict[str, Any], output_format: str, output_path: Path,
     return {"template": used_template, "warning": warning}
 
 
+def _extract_tables_from_text(text: str) -> List[Dict[str, Any]]:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    table_lines = [l for l in lines if "|" in l]
+    if len(table_lines) >= 2:
+        title = lines[0] if lines and "|" not in lines[0] else "Bảng dữ liệu"
+        headers = [c.strip() for c in table_lines[0].split("|")]
+        rows = []
+        for l in table_lines[1:]:
+            if re.match(r"^[\s\|\-:]+$", l):
+                continue
+            cells = [c.strip() for c in l.split("|")]
+            if len(cells) < len(headers):
+                cells += [""] * (len(headers) - len(cells))
+            rows.append(cells[:len(headers)])
+        if headers and rows:
+            return [{"name": title, "headers": headers, "rows": rows}]
+    return []
+
+
 def tool_ocr_map_export(arguments: Dict[str, Any]) -> Dict[str, Any]:
     source = _resolve_source(arguments)
     output_format = str(arguments.get("output_format") or "word").lower()
@@ -186,6 +205,11 @@ def tool_ocr_map_export(arguments: Dict[str, Any]) -> Dict[str, Any]:
         document.setdefault("fields", {})["content"] = vision_text
     if isinstance(vision_fields, dict):
         document.setdefault("fields", {}).update({k: v for k, v in vision_fields.items() if v is not None})
+    tables = arguments.get("tables") or arguments.get("vision_tables")
+    if not tables and vision_text:
+        tables = _extract_tables_from_text(vision_text)
+    if tables:
+        document.setdefault("tables", []).extend(tables)
     template, candidates = recommend_template(document, output_format, arguments.get("template"))
     output_path = Path(arguments.get("output_path") or _default_output(source, output_format)).expanduser().resolve()
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -231,7 +255,7 @@ TOOLS = [
                 "output_path": {"type": "string", "description": "Optional absolute .docx/.xlsx destination."},
                 "template": {"type": "string", "description": "Optional template id, name, or absolute path."},
                 "document_type": {"type": "string", "default": "generic"},
-                "force_ocr": {"type": "boolean", "default": False},
+                "force_ocr": {"type": "boolean", "default": False, "description": "Force OCR for image-only pages. Native PDF text is always preserved exactly."},
                 "vision_text": {"type": "string", "description": "Optional exact transcription read by Gemini from the attached image. Preferred for Vietnamese spelling; local OCR still supplies layout."},
                 "vision_fields": {"type": "object", "description": "Optional fields identified by Gemini, for example title, document_number, issuing_authority, recipient and content.", "additionalProperties": True},
             },
@@ -252,7 +276,7 @@ def handle_request(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         return {"jsonrpc": "2.0", "id": request_id, "result": {
             "protocolVersion": requested,
             "capabilities": {"tools": {"listChanged": False}},
-            "serverInfo": {"name": "office-studio-ai", "version": "1.0.3"},
+            "serverInfo": {"name": "office-studio-ai", "version": "1.0.4"},
         }}
     if method == "ping":
         return {"jsonrpc": "2.0", "id": request_id, "result": {}}
@@ -299,7 +323,7 @@ def main() -> None:
 
 
 class McpHttpHandler(BaseHTTPRequestHandler):
-    server_version = "OfficeStudioMCP/1.0.3"
+    server_version = "OfficeStudioMCP/1.0.4"
 
     def _headers(self, status: int, content_type: str = "application/json; charset=utf-8") -> None:
         self.send_response(status)
@@ -321,8 +345,17 @@ class McpHttpHandler(BaseHTTPRequestHandler):
         if self.path.rstrip("/") == "/mcp":
             # Streamable HTTP permits an SSE GET channel; tool calls use POST below.
             self._headers(200, "text/event-stream")
-            self.wfile.write(b": office-studio-ai ready\n\n")
+            host = self.headers.get("Host") or f"127.0.0.1:{self.server.server_port}"
+            endpoint = f"http://{host}/mcp"
+            self.wfile.write(f"event: endpoint\ndata: {endpoint}\n\n".encode("utf-8"))
             self.wfile.flush()
+            try:
+                while True:
+                    time.sleep(15)
+                    self.wfile.write(b": keepalive\n\n")
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                pass
             return
         self._headers(404)
         self.wfile.write(b'{"error":"not found"}')

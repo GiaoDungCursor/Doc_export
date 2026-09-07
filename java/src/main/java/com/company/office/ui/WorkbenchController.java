@@ -25,8 +25,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.awt.Desktop;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
@@ -189,7 +195,19 @@ public class WorkbenchController {
                         currentDocument.getDocumentType(), currentDocument.getRawText());
         templateComboBox.setItems(FXCollections.observableArrayList(list));
         if (!list.isEmpty()) {
-            templateComboBox.getSelectionModel().select(0);
+            if (currentDocument != null) {
+                int topScore = ctx.getTemplateService().compatibilityScore(
+                        list.get(0), currentDocument.getDocumentType(), currentDocument.getRawText());
+                if (topScore > 0) {
+                    templateComboBox.getSelectionModel().select(0);
+                } else {
+                    templateComboBox.getSelectionModel().clearSelection();
+                }
+            } else {
+                templateComboBox.getSelectionModel().select(0);
+            }
+        } else {
+            templateComboBox.getSelectionModel().clearSelection();
         }
     }
 
@@ -318,9 +336,9 @@ public class WorkbenchController {
                             gc.fillRect(x0, y0, w, h);
 
                             String tag = (String) bMap.get("tag");
-                            if (tag != null && zoomFactor >= 0.35) {
-                                gc.setFill(Color.web(selected ? "#d97706" : "#2563eb"));
-                                String blockLabel = (selected ? "✓ " : "") + tag;
+                            if (tag != null && zoomFactor >= 0.35 && selected) {
+                                gc.setFill(Color.web("#d97706"));
+                                String blockLabel = "✓ " + tag;
                                 double labelWidth = Math.max(42, blockLabel.length() * 7 + 8);
                                 gc.fillRoundRect(x0, Math.max(0, y0 - 16), labelWidth, 15, 4, 4);
                                 gc.setFill(Color.WHITE);
@@ -801,6 +819,118 @@ public class WorkbenchController {
     }
 
     @FXML
+    public void onRotateLeft() {
+        rotateCurrentImage(-90);
+    }
+
+    @FXML
+    public void onRotateRight() {
+        rotateCurrentImage(90);
+    }
+
+    private void rotateCurrentImage(int angleDegrees) {
+        if (currentDocument == null) {
+            statusMessageLabel.setText("Vui lòng chọn một tài liệu trước khi xoay.");
+            return;
+        }
+
+        String imgPath = null;
+        if (!pagesData.isEmpty() && currentPageIndex < pagesData.size()) {
+            Map<String, Object> pageMap = pagesData.get(currentPageIndex);
+            imgPath = (String) pageMap.get("image_path");
+        }
+        if (imgPath == null) {
+            imgPath = currentDocument.getSourcePath();
+        }
+
+        if (imgPath == null || !new File(imgPath).exists()) {
+            statusMessageLabel.setText("Không tìm thấy tệp ảnh của trang hiện tại.");
+            return;
+        }
+
+        try {
+            File imgFile = new File(imgPath);
+            rotateImageFileOnDisk(imgFile, angleDegrees);
+
+            // Re-extraction must use the oriented cache image, never alter the file the
+            // user originally imported. This also makes repeated extraction idempotent.
+            String fileType = currentDocument.getFileType() == null
+                    ? "" : currentDocument.getFileType().toLowerCase(Locale.ROOT);
+            if (List.of("png", "jpg", "jpeg", "bmp", "tif", "tiff").contains(fileType)) {
+                currentDocument.setSourcePath(imgFile.getAbsolutePath());
+                AppContext.getInstance().getDocumentRepository().save(currentDocument);
+            }
+
+            renderCurrentPage();
+            onFitWidth();
+
+            statusMessageLabel.setText("Đã xoay ảnh " + (angleDegrees > 0 ? "phải 90°" : "trái 90°") + ". Đang bóc tách lại...");
+            onReExtract();
+        } catch (Exception e) {
+            logger.error("Lỗi khi xoay ảnh", e);
+            statusMessageLabel.setText("Lỗi khi xoay ảnh: " + e.getMessage());
+        }
+    }
+
+    private void rotateImageFileOnDisk(File file, int angleDegrees) throws IOException {
+        if (file == null || !file.exists()) return;
+        BufferedImage src = ImageIO.read(file);
+        if (src == null) return;
+
+        int w = src.getWidth();
+        int h = src.getHeight();
+
+        boolean swapDims = Math.abs(angleDegrees % 180) == 90;
+        int newW = swapDims ? h : w;
+        int newH = swapDims ? w : h;
+
+        int imageType = src.getType();
+        if (imageType == 0 || imageType == BufferedImage.TYPE_CUSTOM) {
+            imageType = BufferedImage.TYPE_INT_RGB;
+        }
+
+        String formatName = "jpg";
+        int dotIdx = file.getName().lastIndexOf('.');
+        if (dotIdx > 0) {
+            String ext = file.getName().substring(dotIdx + 1).toLowerCase();
+            if ("png".equals(ext)) {
+                formatName = "png";
+                if (imageType != BufferedImage.TYPE_INT_ARGB) {
+                    imageType = BufferedImage.TYPE_INT_ARGB;
+                }
+            } else if ("bmp".equals(ext)) {
+                formatName = "bmp";
+            }
+        }
+
+        BufferedImage dest = new BufferedImage(newW, newH, imageType);
+        Graphics2D g2d = dest.createGraphics();
+        try {
+            g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g2d.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            AffineTransform tx = new AffineTransform();
+            if (angleDegrees == 90 || angleDegrees == -270) {
+                tx.translate(h, 0);
+                tx.quadrantRotate(1);
+            } else if (angleDegrees == -90 || angleDegrees == 270) {
+                tx.translate(0, w);
+                tx.quadrantRotate(3);
+            } else if (Math.abs(angleDegrees) == 180) {
+                tx.translate(w, h);
+                tx.quadrantRotate(2);
+            }
+            g2d.setTransform(tx);
+            g2d.drawImage(src, 0, 0, null);
+        } finally {
+            g2d.dispose();
+        }
+
+        ImageIO.write(dest, formatName, file);
+    }
+
+    @FXML
     public void onReExtract() {
         if (currentDocument == null) return;
 
@@ -851,16 +981,9 @@ public class WorkbenchController {
         }
 
         FileChooser fileChooser = new FileChooser();
-        TemplateEntity wordTemplate = templateComboBox.getSelectionModel().getSelectedItem();
-        if (wordTemplate == null || !"word".equalsIgnoreCase(wordTemplate.getTemplateType())) {
-            wordTemplate = templateComboBox.getItems().stream()
-                    .filter(t -> "word".equalsIgnoreCase(t.getTemplateType())).findFirst().orElse(null);
-        }
-
-        fileChooser.setTitle(wordTemplate == null
-                ? "Lưu văn bản Word OCR" : "Xuất Word theo mẫu: " + wordTemplate.getName());
+        fileChooser.setTitle("Lưu văn bản Word OCR toàn văn");
         String baseName = currentDocument.getFilename().replaceAll("(?i)\\.[a-z0-9]+$", "");
-        fileChooser.setInitialFileName((wordTemplate == null ? "Trich_xuat_" : "Theo_mau_") + baseName + ".docx");
+        fileChooser.setInitialFileName("Trich_xuat_" + baseName + ".docx");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Microsoft Word (*.docx)", "*.docx"));
 
         File selectedFile = fileChooser.showSaveDialog(pageImageView.getScene().getWindow());
@@ -869,14 +992,9 @@ public class WorkbenchController {
             return;
         }
 
-        statusMessageLabel.setText(wordTemplate == null
-                ? "Đang xuất OCR thô ra Word..." : "Đang điền dữ liệu vào mẫu " + wordTemplate.getName() + "...");
+        statusMessageLabel.setText("Đang xuất toàn văn tài liệu ra Word...");
         AppContext ctx = AppContext.getInstance();
-        final TemplateEntity selectedWordTemplate = wordTemplate;
-        CompletableFuture<String> exportFuture = selectedWordTemplate == null
-                ? ctx.getExportService().exportFullDocument(currentDocument.getId(), "word", selectedFile.getAbsolutePath())
-                : ctx.getExportService().exportDocument(currentDocument.getId(), selectedWordTemplate.getId(), selectedFile.getAbsolutePath());
-        exportFuture
+        ctx.getExportService().exportFullDocument(currentDocument.getId(), "word", selectedFile.getAbsolutePath())
                 .thenAccept(outputPath -> Platform.runLater(() -> {
                     this.lastExportedPath = outputPath;
                     statusMessageLabel.setText("Đã lưu file Word thành công tại: " + outputPath);
@@ -897,17 +1015,10 @@ public class WorkbenchController {
             return;
         }
 
-        TemplateEntity excelTemplate = templateComboBox.getSelectionModel().getSelectedItem();
-        if (excelTemplate == null || !"excel".equalsIgnoreCase(excelTemplate.getTemplateType())) {
-            excelTemplate = templateComboBox.getItems().stream()
-                    .filter(t -> "excel".equalsIgnoreCase(t.getTemplateType())).findFirst().orElse(null);
-        }
-
         FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle(excelTemplate == null
-                ? "Lưu bảng tính Excel OCR" : "Xuất Excel theo mẫu: " + excelTemplate.getName());
+        fileChooser.setTitle("Lưu bảng tính Excel OCR toàn bộ");
         String baseName = currentDocument.getFilename().replaceAll("(?i)\\.[a-z0-9]+$", "");
-        fileChooser.setInitialFileName((excelTemplate == null ? "Du_lieu_" : "Theo_mau_") + baseName + ".xlsx");
+        fileChooser.setInitialFileName("Bang_tinh_" + baseName + ".xlsx");
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Microsoft Excel (*.xlsx)", "*.xlsx"));
 
         File selectedFile = fileChooser.showSaveDialog(pageImageView.getScene().getWindow());
@@ -916,14 +1027,9 @@ public class WorkbenchController {
             return;
         }
 
-        statusMessageLabel.setText(excelTemplate == null
-                ? "Đang xuất dữ liệu OCR thô ra Excel..." : "Đang điền dữ liệu vào mẫu " + excelTemplate.getName() + "...");
+        statusMessageLabel.setText("Đang xuất toàn bộ bảng tính và dữ liệu OCR ra Excel...");
         AppContext ctx = AppContext.getInstance();
-        final TemplateEntity selectedExcelTemplate = excelTemplate;
-        CompletableFuture<String> exportFuture = selectedExcelTemplate == null
-                ? ctx.getExportService().exportFullDocument(currentDocument.getId(), "excel", selectedFile.getAbsolutePath())
-                : ctx.getExportService().exportDocument(currentDocument.getId(), selectedExcelTemplate.getId(), selectedFile.getAbsolutePath());
-        exportFuture
+        ctx.getExportService().exportFullDocument(currentDocument.getId(), "excel", selectedFile.getAbsolutePath())
                 .thenAccept(outputPath -> Platform.runLater(() -> {
                     this.lastExportedPath = outputPath;
                     statusMessageLabel.setText("Đã lưu file Excel thành công tại: " + outputPath);

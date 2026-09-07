@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "1.0.3",
+    [string]$Version = "1.0.4",
     [string]$WixDir = "$PSScriptRoot\..\java\.tools\wix314"
 )
 
@@ -23,11 +23,26 @@ try {
 Copy-Item -LiteralPath (Join-Path $javaDir "target\office-automation-$Version.jar") -Destination $inputDir
 Copy-Item -Path (Join-Path $javaDir "target\dependency\*.jar") -Destination $inputDir
 Copy-Item -LiteralPath (Join-Path $root "python") -Destination $inputDir -Recurse
-if (Test-Path (Join-Path $root "models\latin_rec")) {
-    New-Item -ItemType Directory -Path (Join-Path $inputDir "models") -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $root "models\latin_rec") `
-        -Destination (Join-Path $inputDir "models") -Recurse
+$latinModelDir = Join-Path $root "models\latin_rec_v3"
+$latinModelPath = Join-Path $latinModelDir "inference.onnx"
+$latinDictPath = Join-Path $latinModelDir "dict.txt"
+$latinModelSha256 = "e9d7a33667e8aaa702862975186adf2012e3f390cc0f9422865957125f8071cf"
+if (-not (Test-Path $latinModelPath) -or -not (Test-Path $latinDictPath)) {
+    Write-Host "Downloading pinned Vietnamese OCR model for the installer..."
+    New-Item -ItemType Directory -Path $latinModelDir -Force | Out-Null
+    Invoke-WebRequest `
+        -Uri "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/onnx/PP-OCRv4/rec/latin_PP-OCRv3_rec_mobile.onnx" `
+        -OutFile $latinModelPath
+    Invoke-WebRequest `
+        -Uri "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/v3.9.2/paddle/PP-OCRv4/rec/latin_PP-OCRv3_rec_mobile/latin_dict.txt" `
+        -OutFile $latinDictPath
 }
+$actualLatinModelSha256 = (Get-FileHash -LiteralPath $latinModelPath -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($actualLatinModelSha256 -ne $latinModelSha256) {
+    throw "Vietnamese OCR model checksum mismatch. Expected $latinModelSha256, got $actualLatinModelSha256"
+}
+New-Item -ItemType Directory -Path (Join-Path $inputDir "models") -Force | Out-Null
+Copy-Item -LiteralPath $latinModelDir -Destination (Join-Path $inputDir "models") -Recurse
 New-Item -ItemType Directory -Path (Join-Path $inputDir "app-data\templates") -Force | Out-Null
 Copy-Item -LiteralPath (Join-Path $root "app-data\templates\vietnam") `
     -Destination (Join-Path $inputDir "app-data\templates") -Recurse

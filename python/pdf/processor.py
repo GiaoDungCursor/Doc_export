@@ -14,6 +14,7 @@ from typing import List, Dict, Any, Tuple
 from PIL import Image
 import io
 import uuid
+import unicodedata
 from core.document import DocumentPage, Block, Line, Word, Table, TableCell, BoundingBox
 
 class PdfProcessor:
@@ -23,6 +24,11 @@ class PdfProcessor:
     - Renders and caches high-res page images for JavaFX Split-View Viewer
     - Detects embedded tables
     """
+
+    @staticmethod
+    def _clean_native_text(value: str) -> str:
+        """Normalize PDF encoding artifacts without changing Vietnamese words."""
+        return unicodedata.normalize("NFC", value or "").replace("\u00a0", " ").replace("\u00ad", "-")
 
     @staticmethod
     def process_pdf(pdf_path: str, cache_dir: str = "app-data/cache", dpi: int = 180) -> List[DocumentPage]:
@@ -58,7 +64,7 @@ class PdfProcessor:
             scale_y = img_height / page_h_pt if page_h_pt > 0 else 1.0
 
             blocks: List[Block] = []
-            page_text = page.get_text("text")
+            page_text = PdfProcessor._clean_native_text(page.get_text("text"))
 
             # Extract structured text blocks with layout positioning scaled to image pixels
             text_dict = page.get_text("dict")
@@ -83,7 +89,7 @@ class PdfProcessor:
                         line_text_parts = []
 
                         for s in l.get("spans", []):
-                            span_text = s.get("text", "")
+                            span_text = PdfProcessor._clean_native_text(s.get("text", ""))
                             if span_text.strip():
                                 line_text_parts.append(span_text)
                                 span_bbox = BoundingBox(
@@ -145,7 +151,8 @@ class PdfProcessor:
                 image_path=page_img_path,
                 text=page_text,
                 blocks=blocks,
-                tables=tables
+                tables=tables,
+                extraction_method="native_text" if blocks and page_text.strip() else "unknown"
             ))
 
         doc.close()

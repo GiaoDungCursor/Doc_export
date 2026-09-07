@@ -147,7 +147,18 @@ public class TemplateService {
         return result;
     }
 
-    private int compatibilityScore(TemplateEntity template, String context) {
+    public int compatibilityScore(TemplateEntity template, String documentType, String rawText) {
+        String context = ((documentType == null ? "" : documentType) + " " +
+                (rawText == null ? "" : rawText)).toLowerCase(Locale.ROOT);
+        if ((context.contains("cộng hòa xã hội chủ nghĩa việt nam") || context.contains("cong hoa xa hoi chu nghia viet nam"))
+                && (context.contains("kính gửi") || context.contains("kinh gui"))
+                && (context.contains("v/v") || context.contains("v / v"))) {
+            context += " official công văn cong van";
+        }
+        return compatibilityScore(template, context);
+    }
+
+    public int compatibilityScore(TemplateEntity template, String context) {
         String haystack = (template.getName() + " " + template.getDescription() + " " + template.getFilePath())
                 .toLowerCase(Locale.ROOT);
         int score = 0;
