@@ -753,6 +753,7 @@ public class WorkbenchController {
 
     @FXML
     public void onPrevPage() {
+        showToolbarLabel("Trang trước");
         if (currentPageIndex > 0) {
             currentPageIndex--;
             selectedBlockIndex = -1;
@@ -763,6 +764,7 @@ public class WorkbenchController {
 
     @FXML
     public void onNextPage() {
+        showToolbarLabel("Trang sau");
         if (currentPageIndex < pagesData.size() - 1) {
             currentPageIndex++;
             selectedBlockIndex = -1;
@@ -773,6 +775,7 @@ public class WorkbenchController {
 
     @FXML
     public void onZoomIn() {
+        showToolbarLabel("Phóng to");
         if (zoomFactor < 3.0) {
             zoomFactor = Math.min(3.0, zoomFactor + 0.15);
             updateZoomAndCanvasSize();
@@ -781,6 +784,7 @@ public class WorkbenchController {
 
     @FXML
     public void onZoomOut() {
+        showToolbarLabel("Thu nhỏ");
         if (zoomFactor > 0.15) {
             zoomFactor = Math.max(0.15, zoomFactor - 0.15);
             updateZoomAndCanvasSize();
@@ -789,12 +793,14 @@ public class WorkbenchController {
 
     @FXML
     public void onZoomReset() {
+        showToolbarLabel("Kích thước 100%");
         zoomFactor = 1.0;
         updateZoomAndCanvasSize();
     }
 
     @FXML
     public void onFitWidth() {
+        showToolbarLabel("Vừa rộng theo chiều ngang");
         Platform.runLater(() -> {
             double viewportWidth = viewerScrollPane.getViewportBounds().getWidth();
             if (viewportWidth > 50 && originalImgWidth > 0) {
@@ -806,6 +812,7 @@ public class WorkbenchController {
 
     @FXML
     public void onFitPage() {
+        showToolbarLabel("Vừa toàn bộ trang");
         Platform.runLater(() -> {
             double viewportWidth = viewerScrollPane.getViewportBounds().getWidth();
             double viewportHeight = viewerScrollPane.getViewportBounds().getHeight();
@@ -820,11 +827,13 @@ public class WorkbenchController {
 
     @FXML
     public void onRotateLeft() {
+        showToolbarLabel("Xoay trái 90 độ");
         rotateCurrentImage(-90);
     }
 
     @FXML
     public void onRotateRight() {
+        showToolbarLabel("Xoay phải 90 độ");
         rotateCurrentImage(90);
     }
 
@@ -869,6 +878,12 @@ public class WorkbenchController {
         } catch (Exception e) {
             logger.error("Lỗi khi xoay ảnh", e);
             statusMessageLabel.setText("Lỗi khi xoay ảnh: " + e.getMessage());
+        }
+    }
+
+    private void showToolbarLabel(String label) {
+        if (statusMessageLabel != null) {
+            statusMessageLabel.setText("Đã chọn: " + label);
         }
     }
 
@@ -934,7 +949,7 @@ public class WorkbenchController {
     public void onReExtract() {
         if (currentDocument == null) return;
 
-        statusMessageLabel.setText("Đang trích xuất lại tài liệu bằng PaddleOCR...");
+        statusMessageLabel.setText("Đang trích xuất lại tài liệu bằng RapidOCR...");
         AppContext ctx = AppContext.getInstance();
         ctx.getExtractionService().extractDocument(currentDocument.getId())
                 .thenAccept(doc -> Platform.runLater(() -> {

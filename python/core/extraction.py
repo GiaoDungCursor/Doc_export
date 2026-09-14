@@ -14,7 +14,7 @@ class ExtractionPipeline:
     """
     Intelligent Hybrid Document Extraction Pipeline:
     1. PyMuPDF extracts digital vector text, fonts, tables & renders page preview images in <0.1s.
-    2. PaddleOCR v4 (Deep Learning OCR) runs for scanned pages, images (PNG/JPG), or when text layer is absent.
+    2. RapidOCR (ONNX) runs for scanned pages, images (PNG/JPG), or when text layer is absent.
     3. OpenCV preprocessing (deskew, noise filter, CLAHE contrast).
     4. Heuristic & Pattern-based field extraction with BoundingBox links.
     5. Data normalization.
@@ -58,11 +58,11 @@ class ExtractionPipeline:
                 has_digital_text = bool(page.text and page.text.strip() and page.blocks)
 
                 if not has_digital_text:
-                    # Run PaddleOCR v4 on scanned page
+                    # Run RapidOCR on scanned page
                     if page.image_path and os.path.exists(page.image_path):
                         ocr_blocks, ocr_tables = self.ocr_engine.analyze_image(page.image_path, save_oriented_path=page.image_path)
                         if ocr_blocks:
-                            sys.stderr.write(f"[PaddleOCR v4] Scanned page {p_idx + 1}: extracted {len(ocr_blocks)} text blocks\n")
+                            sys.stderr.write(f"[RapidOCR] Scanned page {p_idx + 1}: extracted {len(ocr_blocks)} text blocks\n")
                             page.blocks = ocr_blocks
                             page.tables = ocr_tables
                             tables.extend(ocr_tables)
@@ -81,13 +81,13 @@ class ExtractionPipeline:
                     raw_text_parts.append(page.text)
 
         elif file_ext in [".png", ".jpg", ".jpeg", ".tiff", ".bmp"]:
-            # Image files always run full PaddleOCR v4
+        # Image files always run the full RapidOCR pipeline
             img_cache_name = f"img_{uuid.uuid4().hex[:12]}{file_ext}"
             cached_img_path = os.path.abspath(os.path.join(self.cache_dir, img_cache_name))
             shutil.copyfile(file_path, cached_img_path)
 
             ocr_blocks, image_tables = self.ocr_engine.analyze_image(file_path, save_oriented_path=cached_img_path)
-            sys.stderr.write(f"[PaddleOCR v4] Image {filename}: extracted {len(ocr_blocks)} text blocks\n")
+            sys.stderr.write(f"[RapidOCR] Image {filename}: extracted {len(ocr_blocks)} text blocks\n")
             if not image_tables:
                 image_tables = self._detect_tables_from_blocks(ocr_blocks)
 

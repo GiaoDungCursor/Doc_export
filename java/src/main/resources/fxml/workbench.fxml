@@ -80,33 +80,33 @@
             <!-- Left Toolbar: Clean, Compact, Responsive -->
             <HBox alignment="CENTER_LEFT" spacing="6.0" styleClass="viewer-toolbar" style="-fx-padding: 6 10;">
                 <!-- Page Navigation -->
-                <Button text="◀" onAction="#onPrevPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Button text="◀" onAction="#onPrevPage" styleClass="tool-btn icon-tool" accessibleText="Trang trước" style="-fx-padding: 3 9;"><tooltip><Tooltip text="Trang trước"/></tooltip></Button>
                 <Label fx:id="pageLabel" text="1 / 1" style="-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 11px;"/>
-                <Button text="›" onAction="#onNextPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Button text="▶" onAction="#onNextPage" styleClass="tool-btn icon-tool" accessibleText="Trang sau" style="-fx-padding: 3 9;"><tooltip><Tooltip text="Trang sau"/></tooltip></Button>
 
                 <Separator orientation="VERTICAL" style="-fx-padding: 0 2;"/>
 
                 <!-- Zoom Controls -->
-                <Button text="−" onAction="#onZoomOut" styleClass="tool-btn" style="-fx-padding: 3 10;"/>
+                <Button text="−" onAction="#onZoomOut" styleClass="tool-btn icon-tool" accessibleText="Thu nhỏ" style="-fx-padding: 3 10;"><tooltip><Tooltip text="Thu nhỏ"/></tooltip></Button>
                 <Label fx:id="zoomLabel" text="100%" style="-fx-text-fill: #1d4ed8; -fx-font-weight: bold; -fx-font-size: 11px; -fx-min-width: 42px; -fx-alignment: center;"/>
-                <Button text="+" onAction="#onZoomIn" styleClass="tool-btn" style="-fx-padding: 3 10;"/>
+                <Button text="＋" onAction="#onZoomIn" styleClass="tool-btn icon-tool" accessibleText="Phóng to" style="-fx-padding: 3 10;"><tooltip><Tooltip text="Phóng to"/></tooltip></Button>
 
                 <Separator orientation="VERTICAL" style="-fx-padding: 0 2;"/>
 
                 <!-- Fit Options -->
-                <Button text="Vừa rộng" onAction="#onFitWidth" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
-                <Button text="Toàn trang" onAction="#onFitPage" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
-                <Button text="100%" onAction="#onZoomReset" styleClass="tool-btn" style="-fx-padding: 3 6;"/>
+                <Button text="↔" onAction="#onFitWidth" styleClass="tool-btn icon-tool" accessibleText="Vừa rộng" style="-fx-padding: 3 9;"><tooltip><Tooltip text="Vừa rộng theo chiều ngang"/></tooltip></Button>
+                <Button text="▣" onAction="#onFitPage" styleClass="tool-btn icon-tool" accessibleText="Toàn trang" style="-fx-padding: 3 9;"><tooltip><Tooltip text="Vừa toàn bộ trang"/></tooltip></Button>
+                <Button text="1:1" onAction="#onZoomReset" styleClass="tool-btn icon-tool" accessibleText="Kích thước 100 phần trăm" style="-fx-padding: 3 7;"><tooltip><Tooltip text="Đặt kích thước 100%"/></tooltip></Button>
 
                 <Separator orientation="VERTICAL" style="-fx-padding: 0 2;"/>
 
                 <!-- Rotate Controls -->
-                <Button text="⟲ Xoay trái" onAction="#onRotateLeft" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
-                <Button text="⟳ Xoay phải" onAction="#onRotateRight" styleClass="tool-btn" style="-fx-padding: 3 8;"/>
+                <Button text="↶" onAction="#onRotateLeft" styleClass="tool-btn icon-tool" accessibleText="Xoay trái" style="-fx-padding: 3 9;"><tooltip><Tooltip text="Xoay trái 90 độ"/></tooltip></Button>
+                <Button text="↷" onAction="#onRotateRight" styleClass="tool-btn icon-tool" accessibleText="Xoay phải" style="-fx-padding: 3 9;"><tooltip><Tooltip text="Xoay phải 90 độ"/></tooltip></Button>
 
                 <Region HBox.hgrow="ALWAYS"/>
 
-                <CheckBox fx:id="showBboxesCheckbox" text="Hiện tất cả khung" selected="false" style="-fx-text-fill: #475569; -fx-font-size: 11px;"/>
+                <CheckBox fx:id="showBboxesCheckbox" text="▣" accessibleText="Hiện tất cả khung OCR" selected="false" style="-fx-text-fill: #475569; -fx-font-size: 14px;"><tooltip><Tooltip text="Hiện/ẩn tất cả khung OCR"/></tooltip></CheckBox>
             </HBox>
 
             <!-- Image & Bounding Boxes Canvas Area with Center Alignment -->

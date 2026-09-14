@@ -6,23 +6,19 @@ from typing import List, Dict, Any, Optional, Tuple
 from core.document import Block, Line, Word, BoundingBox, Table, TableCell
 from ocr.preprocess import ImagePreprocessor
 from ocr.table import TableDetector
-from ocr.vl_engine import PaddleOCRVLEngine
 
 class OcrEngine:
     """
-    PaddleOCR Multi-language & Vietnamese Engine:
+    RapidOCR Vietnamese Engine:
     - RapidOCR with the PP-OCRv3 Latin ONNX model and its Vietnamese dictionary
-    - PaddleOCR-VL-1.5 Vision-Language Model for complex layouts and table structure extraction
     - Sensitive text detection (unclip_ratio=2.0, limit_side_len=1600) to prevent missed lines
     - Post-processing text normalizer for Vietnamese administrative and legal vocabulary
     """
     _instance = None
     _engine = None
-    _vl_engine = None
 
     def __init__(self):
         self._init_engine()
-        self._vl_engine = PaddleOCRVLEngine.get_instance()
 
     def _init_engine(self):
         latin_model = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models", "latin_rec_v3", "inference.onnx"))
@@ -63,9 +59,6 @@ class OcrEngine:
     def analyze_image(self, image_input, prefer_vl: bool = False, save_oriented_path: Optional[str] = None,
                       auto_orient: bool = False):
         """Run OCR and return both text blocks and table structure."""
-        if prefer_vl and self._vl_engine and self._vl_engine.available:
-            return self.analyze_image_vl(image_input)
-
         preprocessed = ImagePreprocessor.preprocess_for_ocr(image_input)
 
         if self._engine is not None:
@@ -142,7 +135,7 @@ class OcrEngine:
                     tables = TableDetector.extract_tables(preprocessed, blocks_raw)
 
                     # Fallback to PaddleOCR-VL if still no table and keywords present
-                    if not tables and self._vl_engine and self._vl_engine.available:
+                    if False and not tables and self._vl_engine and self._vl_engine.available:
                         full_text = " ".join(b.text for b in blocks_raw).upper()
                         keywords = [
                             "DANH MỤC BẢN VẼ", "DANH MUC BAN VE", "DANH MỤC", "DANH MUC",

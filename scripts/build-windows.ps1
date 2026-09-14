@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "1.0.5",
+    [string]$Version = "1.0.6",
     [string]$WixDir = "$PSScriptRoot\..\java\.tools\wix314"
 )
 
@@ -84,7 +84,15 @@ $bloatDirs = @(
     "Lib\idlelib", "Lib\test", "Lib\turtledemo", "Lib\ensurepip", "Lib\pydoc_data",
     "Lib\tkinter\test", "Lib\unittest\test", "Lib\ctypes\test", "Lib\distutils\tests",
     "Lib\site-packages\pip", "Lib\site-packages\setuptools", "Lib\site-packages\wheel",
-    "Lib\site-packages\pkg_resources"
+    "Lib\site-packages\pkg_resources",
+    "Lib\site-packages\torch",
+    "Lib\site-packages\torch-*.dist-info",
+    "Lib\site-packages\torchvision",
+    "Lib\site-packages\torchvision-*.dist-info",
+    "Lib\site-packages\transformers",
+    "Lib\site-packages\transformers-*.dist-info",
+    "Lib\site-packages\tokenizers",
+    "Lib\site-packages\tokenizers-*.dist-info"
 )
 foreach ($rel in $bloatDirs) {
     $target = Join-Path $runtimeDir $rel
@@ -114,6 +122,7 @@ if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
     --main-jar "office-automation-$Version.jar" `
     --main-class "com.company.office.Launcher" `
     --win-per-user-install `
+    --win-upgrade-uuid "9f37b764-2d1a-4b90-8f3d-1f6fb6e8a4d1" `
     --win-dir-chooser `
     --win-menu `
     --win-shortcut
