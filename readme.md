@@ -6,15 +6,15 @@ trên máy; ứng dụng không yêu cầu gửi tài liệu lên dịch vụ đ
 
 ## Tải bản Windows
 
-- [Tải Office Studio AI v1.0.6 (.exe)](https://github.com/GiaoDungCursor/Doc_export/releases/download/v1.0.6/Office.Studio.AI-1.0.6.exe)
+- [Tải Office Studio AI v1.0.7 (.exe)](https://github.com/GiaoDungCursor/Doc_export/releases/download/v1.0.7/Office.Studio.AI-1.0.7.exe)
 - [Xem tất cả bản phát hành](https://github.com/GiaoDungCursor/Doc_export/releases)
 - Windows 10/11 x64
 - Bản cài đã kèm Java 21, Python và thư viện OCR; người dùng thông thường không cần cài môi trường lập trình.
 
-SHA-256 của bản v1.0.6:
+SHA-256 của bản v1.0.7:
 
 ```text
-C21033ED3DA1A6EFE8DC7F67D46B8083898E2D8351F07F4A3159DD8EA5A0E2D4
+Được cập nhật sau khi build bản v1.0.7.
 ```
 
 Ứng dụng chưa ký chứng thư số. Nếu Windows SmartScreen cảnh báo, chọn
@@ -26,7 +26,9 @@ C21033ED3DA1A6EFE8DC7F67D46B8083898E2D8351F07F4A3159DD8EA5A0E2D4
 
 Khi Office Studio AI đang mở, ứng dụng tự khởi động MCP Streamable HTTP tại
 `http://127.0.0.1:8765/mcp`; health check nằm tại `http://127.0.0.1:8765/health`.
-Server cung cấp tool `ocr_map_export` để Gemini gửi đường dẫn ảnh/PDF, bổ sung bản chép
+Server cung cấp tool `ocr_extract_document` để Gemini đọc nội dung có cấu trúc từ ảnh, PDF,
+Word (`.docx`) hoặc Excel (`.xlsx`, `.xlsm`) trước,
+sau đó dùng `ocr_map_export` để gửi đường dẫn ảnh/PDF, bổ sung bản chép
 `vision_text` nếu cần, tự chọn template Việt Nam và xuất Word/Excel trong một lần gọi.
 
 Trong Antigravity, mở **MCP Servers → Manage MCP Servers → View raw config**, sau đó chép
@@ -211,13 +213,13 @@ java/.tools/wix314/light.exe
 Từ thư mục gốc repository chạy:
 
 ```powershell
-.\scripts\build-windows.ps1 -Version 1.0.6
+.\scripts\build-windows.ps1 -Version 1.0.7
 ```
 
 Installer được tạo tại:
 
 ```text
-release/Office Studio AI-1.0.6.exe
+release/Office Studio AI-1.0.7.exe
 ```
 
 Script build đóng gói Java runtime, source Python, thư viện OCR trong môi trường

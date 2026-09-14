@@ -30,7 +30,7 @@ logging.basicConfig(level=logging.INFO, stream=sys.stderr,
                     format="%(asctime)s [OfficeStudioMCP] %(levelname)s %(message)s")
 LOGGER = logging.getLogger("office-studio-mcp")
 
-SUPPORTED_INPUTS = {".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp"}
+SUPPORTED_INPUTS = {".pdf", ".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp", ".docx", ".xlsx", ".xlsm"}
 TEMPLATE_EXTENSIONS = {".docx": "word", ".xlsx": "excel", ".xlsm": "excel"}
 
 
@@ -189,6 +189,29 @@ def _extract_tables_from_text(text: str) -> List[Dict[str, Any]]:
     return []
 
 
+def tool_ocr_extract_document(arguments: Dict[str, Any]) -> Dict[str, Any]:
+    source = _resolve_source(arguments)
+    pipeline = ExtractionPipeline(cache_dir=str(ROOT / "app-data" / "cache"))
+    doc = pipeline.process(
+        str(source),
+        doc_type=str(arguments.get("document_type") or "generic"),
+        force_ocr=bool(arguments.get("force_ocr", False)),
+    )
+    document = DocumentValidator.validate(doc).to_canonical_dict()
+    return {
+        "success": True,
+        "source_path": str(source),
+        "document_type": document.get("document_type"),
+        "status": document.get("status"),
+        "confidence": document.get("confidence"),
+        "raw_text": document.get("raw_text", ""),
+        "fields": document.get("fields", {}),
+        "tables": document.get("tables", []),
+        "pages": document.get("pages", []),
+        "review_required": document.get("status") == "NEEDS_REVIEW",
+    }
+
+
 def tool_ocr_map_export(arguments: Dict[str, Any]) -> Dict[str, Any]:
     source = _resolve_source(arguments)
     output_format = str(arguments.get("output_format") or "word").lower()
@@ -245,12 +268,26 @@ TOOLS = [
         },
     },
     {
-        "name": "ocr_map_export",
-        "description": "OCR a local image/PDF, choose the most suitable Vietnamese template, map fields, and export Word or Excel in one operation. Return a local output path and review status.",
+        "name": "ocr_extract_document",
+        "description": "Extract text, fields, tables, and page layout from a local image/PDF so Gemini can read and correct the content before export.",
         "inputSchema": {
             "type": "object",
             "properties": {
-                "source_path": {"type": "string", "description": "Absolute path of the local image or PDF."},
+                "source_path": {"type": "string", "description": "Absolute path of a local image, PDF, DOCX, XLSX, or XLSM file."},
+                "document_type": {"type": "string", "default": "generic"},
+                "force_ocr": {"type": "boolean", "default": False, "description": "Force OCR for image-only pages. Native PDF text is preserved exactly."},
+            },
+            "required": ["source_path"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "ocr_map_export",
+        "description": "Export a local image/PDF to a Vietnamese Word or Excel template. For best accuracy, first call ocr_extract_document, let Gemini correct its text/fields/tables, then pass those corrections as vision_text, vision_fields, and vision_tables.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "source_path": {"type": "string", "description": "Absolute path of a local image, PDF, DOCX, XLSX, or XLSM file."},
                 "output_format": {"type": "string", "enum": ["word", "excel"], "default": "word"},
                 "output_path": {"type": "string", "description": "Optional absolute .docx/.xlsx destination."},
                 "template": {"type": "string", "description": "Optional template id, name, or absolute path."},
@@ -258,6 +295,23 @@ TOOLS = [
                 "force_ocr": {"type": "boolean", "default": False, "description": "Force OCR for image-only pages. Native PDF text is always preserved exactly."},
                 "vision_text": {"type": "string", "description": "Optional exact transcription read by Gemini from the attached image. Preferred for Vietnamese spelling; local OCR still supplies layout."},
                 "vision_fields": {"type": "object", "description": "Optional fields identified by Gemini, for example title, document_number, issuing_authority, recipient and content.", "additionalProperties": True},
+                "vision_tables": {
+                    "type": "array",
+                    "description": "Optional tables corrected by Gemini. Each table contains name, headers, and rows.",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "name": {"type": "string"},
+                            "headers": {"type": "array", "items": {"type": "string"}},
+                            "rows": {
+                                "type": "array",
+                                "items": {"type": "array", "items": {}},
+                            },
+                        },
+                        "required": ["headers", "rows"],
+                        "additionalProperties": False,
+                    },
+                },
             },
             "required": ["source_path"],
             "additionalProperties": False,
@@ -290,6 +344,8 @@ def handle_request(request: Dict[str, Any]) -> Optional[Dict[str, Any]]:
                 result = {"ready": True, "root": str(ROOT), "templates": len(discover_templates())}
             elif name == "list_office_templates":
                 result = {"templates": discover_templates(arguments.get("output_format"))}
+            elif name == "ocr_extract_document":
+                result = tool_ocr_extract_document(arguments)
             elif name == "ocr_map_export":
                 result = tool_ocr_map_export(arguments)
             else:

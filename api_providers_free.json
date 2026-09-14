@@ -1,0 +1,157 @@
+[
+  {
+    "id": "groq",
+    "slug": "groq",
+    "name": "Groq Cloud",
+    "provider": "Groq",
+    "category": "LLM Inference",
+    "website": "https://console.groq.com",
+    "endpoint": "https://api.groq.com/openai/v1",
+    "image_url": "https://groq.com/wp-content/uploads/2024/03/groq-favicon.png",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Nền tảng inference AI siêu tốc trên chip LPU độc quyền, cung cấp các model mã nguồn mở hàng đầu hoàn toàn miễn phí với tốc độ phản hồi cực nhanh.",
+    "models": [
+      { "id": "llama-3.3-70b-versatile", "name": "Llama 3.3 70B Versatile" },
+      { "id": "llama-3.1-8b-instant", "name": "Llama 3.1 8B Instant" },
+      { "id": "deepseek-r1-distill-llama-70b", "name": "DeepSeek R1 Distill Llama 70B" },
+      { "id": "gemma2-9b-it", "name": "Gemma 2 9B IT" },
+      { "id": "mixtral-8x7b-32768", "name": "Mixtral 8x7B" },
+      { "id": "whisper-large-v3", "name": "Whisper Large V3 (Audio)" }
+    ]
+  },
+  {
+    "id": "cerebras",
+    "slug": "cerebras",
+    "name": "Cerebras",
+    "provider": "Cerebras Systems",
+    "category": "LLM Inference",
+    "website": "https://cloud.cerebras.ai",
+    "endpoint": "https://api.cerebras.ai/v1",
+    "image_url": "https://cerebras.ai/favicon.ico",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Hệ thống inference tốc độ cao chạy trên siêu chip Wafer Scale Engine lớn nhất thế giới, hỗ trợ Llama 3.1 và 3.3 với độ trễ siêu thấp và quota miễn phí hàng ngày.",
+    "models": [
+      { "id": "llama3.3-70b", "name": "Llama 3.3 70B" },
+      { "id": "llama3.1-8b", "name": "Llama 3.1 8B" }
+    ]
+  },
+  {
+    "id": "sambanova",
+    "slug": "sambanova",
+    "name": "SambaNova Cloud",
+    "provider": "SambaNova Systems",
+    "category": "LLM Inference",
+    "website": "https://cloud.sambanova.ai",
+    "endpoint": "https://api.sambanova.ai/v1",
+    "image_url": "https://sambanova.ai/hubfs/favicon-32x32.png",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Dịch vụ đám mây cung cấp các mô hình mã nguồn mở kích thước lớn và reasoning models như DeepSeek-R1, Llama 405B hoàn toàn miễn phí cho lập trình viên.",
+    "models": [
+      { "id": "DeepSeek-R1", "name": "DeepSeek R1 Full" },
+      { "id": "DeepSeek-V3", "name": "DeepSeek V3" },
+      { "id": "Meta-Llama-3.3-70B-Instruct", "name": "Llama 3.3 70B Instruct" },
+      { "id": "Meta-Llama-3.1-405B-Instruct", "name": "Llama 3.1 405B Instruct" },
+      { "id": "Meta-Llama-3.1-8B-Instruct", "name": "Llama 3.1 8B Instruct" }
+    ]
+  },
+  {
+    "id": "github-models",
+    "slug": "github-models",
+    "name": "GitHub Models",
+    "provider": "GitHub / Microsoft",
+    "category": "AI Gateway",
+    "website": "https://github.com/marketplace/models",
+    "endpoint": "https://models.inference.ai.azure.com",
+    "image_url": "https://github.githubassets.com/favicons/favicon.png",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Kho mô hình AI miễn phí dành cho lập trình viên từ GitHub & Azure AI, dùng trực tiếp bằng GitHub Personal Access Token với nhiều model hàng đầu.",
+    "models": [
+      { "id": "gpt-4o-mini", "name": "GPT-4o Mini (Azure GitHub)" },
+      { "id": "Meta-Llama-3.3-70B-Instruct", "name": "Llama 3.3 70B Instruct" },
+      { "id": "Phi-4", "name": "Microsoft Phi-4" },
+      { "id": "Mistral-large-2411", "name": "Mistral Large 2411" },
+      { "id": "DeepSeek-R1", "name": "DeepSeek R1" }
+    ]
+  },
+  {
+    "id": "cloudflare-workers-ai",
+    "slug": "cloudflare-workers-ai",
+    "name": "Cloudflare Workers AI",
+    "provider": "Cloudflare",
+    "category": "Edge AI",
+    "website": "https://developers.cloudflare.com/workers-ai/",
+    "endpoint": "https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/v1",
+    "image_url": "https://www.cloudflare.com/favicon.ico",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Nền tảng AI Serverless biên toàn cầu của Cloudflare, cấp 10.000 Neurons miễn phí mỗi ngày để chạy LLM, Vision, Embeddings.",
+    "models": [
+      { "id": "@cf/meta/llama-3.3-70b-instruct-fp8-fast", "name": "Llama 3.3 70B Instruct" },
+      { "id": "@cf/meta/llama-3.1-8b-instruct", "name": "Llama 3.1 8B Instruct" },
+      { "id": "@cf/qwen/qwen2.5-7b-instruct", "name": "Qwen 2.5 7B Instruct" },
+      { "id": "@cf/mistral/mistral-7b-instruct-v0.2", "name": "Mistral 7B Instruct" },
+      { "id": "@cf/baai/bge-large-en-v1.5", "name": "BGE Large Embeddings" }
+    ]
+  },
+  {
+    "id": "mistral-ai",
+    "slug": "mistral-ai",
+    "name": "Mistral AI",
+    "provider": "Mistral AI",
+    "category": "AI Foundation",
+    "website": "https://console.mistral.ai",
+    "endpoint": "https://api.mistral.ai/v1",
+    "image_url": "https://mistral.ai/favicon.ico",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Nền tảng AI hàng đầu châu Âu cung cấp gói Experiment miễn phí cho nhà phát triển thử nghiệm dòng mô hình Mistral, Codestral và Pixtral.",
+    "models": [
+      { "id": "codestral-latest", "name": "Codestral" },
+      { "id": "mistral-small-latest", "name": "Mistral Small" },
+      { "id": "open-mistral-nemo", "name": "Mistral NeMo 12B" },
+      { "id": "pixtral-12b-2409", "name": "Pixtral 12B (Vision)" }
+    ]
+  },
+  {
+    "id": "cohere",
+    "slug": "cohere",
+    "name": "Cohere",
+    "provider": "Cohere",
+    "category": "Enterprise AI & RAG",
+    "website": "https://cohere.com",
+    "endpoint": "https://api.cohere.com/v2",
+    "image_url": "https://cohere.com/favicon.ico",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "Cung cấp Trial API Key miễn phí vĩnh viễn cho mục đích phát triển ứng dụng, thế mạnh vượt trội về RAG, Search và Rerank.",
+    "models": [
+      { "id": "command-r-plus-08-2024", "name": "Command R+" },
+      { "id": "command-r-08-2024", "name": "Command R" },
+      { "id": "rerank-v3.5", "name": "Cohere Rerank 3.5" },
+      { "id": "embed-multilingual-v3.0", "name": "Embed Multilingual v3.0" }
+    ]
+  },
+  {
+    "id": "pollinations-ai",
+    "slug": "pollinations-ai",
+    "name": "Pollinations AI",
+    "provider": "Pollinations",
+    "category": "Open Gateway",
+    "website": "https://pollinations.ai",
+    "endpoint": "https://text.pollinations.ai/openai",
+    "image_url": "https://pollinations.ai/favicon.ico",
+    "type": "Miễn phí",
+    "price": 0,
+    "description": "API mở hoàn toàn miễn phí cộng đồng, không cần thẻ, không cần đăng ký tài khoản hay API Key, hỗ trợ sinh văn bản và hình ảnh nhanh.",
+    "models": [
+      { "id": "openai", "name": "OpenAI Default" },
+      { "id": "mistral", "name": "Mistral Large" },
+      { "id": "qwen", "name": "Qwen 2.5 72B" },
+      { "id": "deepseek", "name": "DeepSeek R1" }
+    ]
+  }
+]

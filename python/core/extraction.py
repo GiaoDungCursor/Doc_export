@@ -4,7 +4,7 @@ import re
 import shutil
 import uuid
 from typing import Dict, Any, Optional
-from core.document import Document, DocumentMetadata, DocumentField, DocumentPage, Table, BoundingBox
+from core.document import Block, Document, DocumentMetadata, DocumentField, DocumentPage, Table, BoundingBox
 from core.normalize import DataNormalizer
 from core.text_layout import normalize_document_pages
 from pdf.processor import PdfProcessor
@@ -105,6 +105,17 @@ class ExtractionPipeline:
             tables.extend(image_tables)
             metadata.page_count = 1
 
+        elif file_ext == ".docx":
+            pages, tables = self._extract_docx(file_path)
+            metadata.page_count = len(pages)
+
+        elif file_ext in [".xlsx", ".xlsm"]:
+            pages, tables = self._extract_excel(file_path)
+            metadata.page_count = len(pages)
+
+        else:
+            raise ValueError(f"Unsupported input format: {file_ext}")
+
         full_raw_text = normalize_document_pages(pages)
 
         # Infer document type
@@ -176,6 +187,86 @@ class ExtractionPipeline:
         )
 
         return doc
+
+    def _extract_docx(self, file_path: str):
+        import docx
+
+        source = docx.Document(file_path)
+        blocks = []
+        text_parts = []
+        tables = []
+        for paragraph in source.paragraphs:
+            text = paragraph.text.strip()
+            if not text:
+                continue
+            style_name = (paragraph.style.name if paragraph.style else "").lower()
+            tag = "Title" if "title" in style_name or "heading 1" in style_name else "Text"
+            blocks.append(Block(text=text, confidence=1.0, tag=tag))
+            text_parts.append(text)
+
+        for index, word_table in enumerate(source.tables, 1):
+            matrix = [[cell.text.strip() for cell in row.cells] for row in word_table.rows]
+            matrix = [row for row in matrix if any(value for value in row)]
+            if not matrix:
+                continue
+            headers = matrix[0]
+            rows = matrix[1:]
+            table = Table(name=f"Table {index}", headers=headers, rows=rows, confidence=1.0)
+            tables.append(table)
+            text_parts.extend(" | ".join(row) for row in matrix)
+
+        page = DocumentPage(
+            page_number=1,
+            text="\n".join(text_parts),
+            blocks=blocks,
+            tables=tables,
+            extraction_method="native_docx",
+        )
+        return [page], tables
+
+    def _extract_excel(self, file_path: str):
+        import openpyxl
+
+        workbook = openpyxl.load_workbook(file_path, data_only=False, read_only=True)
+        pages = []
+        tables = []
+        try:
+            for page_number, sheet in enumerate(workbook.worksheets, 1):
+                matrix = []
+                for row in sheet.iter_rows(values_only=True):
+                    values = ["" if value is None else str(value) for value in row]
+                    while values and not values[-1]:
+                        values.pop()
+                    if any(values):
+                        matrix.append(values)
+                if not matrix:
+                    pages.append(DocumentPage(
+                        page_number=page_number,
+                        text=sheet.title,
+                        blocks=[Block(text=sheet.title, confidence=1.0, tag="Title")],
+                        extraction_method="native_excel",
+                    ))
+                    continue
+                width = max(len(row) for row in matrix)
+                normalized = [row + [""] * (width - len(row)) for row in matrix]
+                table = Table(
+                    name=sheet.title,
+                    headers=normalized[0],
+                    rows=normalized[1:],
+                    confidence=1.0,
+                )
+                tables.append(table)
+                text = "\n".join(" | ".join(row) for row in normalized)
+                pages.append(DocumentPage(
+                    page_number=page_number,
+                    text=text,
+                    blocks=[Block(text=sheet.title, confidence=1.0, tag="Title")],
+                    tables=[table],
+                    extraction_method="native_excel",
+                ))
+        finally:
+            workbook.close()
+        return pages, tables
 
     def _extract_fields(self, pages, text: str, doc_type: str) -> Dict[str, DocumentField]:
         fields: Dict[str, DocumentField] = {}
