@@ -2,6 +2,8 @@ package com.company.office;
 
 import com.company.office.ui.AppContext;
 import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.control.Alert;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
@@ -10,6 +12,11 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.CompletableFuture;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+
 public class App extends Application {
     private static final Logger logger = LoggerFactory.getLogger(App.class);
 
@@ -17,7 +24,8 @@ public class App extends Application {
     public void start(Stage primaryStage) {
         try {
             logger.info("Initializing Office Automation Desktop App...");
-            AppContext.getInstance().init();
+            exposeUninstallUtilities();
+            AppContext appContext = AppContext.getInstance();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/main.fxml"));
             Parent root = loader.load();
@@ -55,6 +63,19 @@ public class App extends Application {
 
             primaryStage.show();
             logger.info("Desktop App window displayed successfully.");
+
+            CompletableFuture.runAsync(appContext::init).exceptionally(error -> {
+                logger.error("Background services failed to start", error);
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Không thể khởi động OCR");
+                    alert.setHeaderText("Dịch vụ OCR cục bộ chưa khởi động được");
+                    alert.setContentText("Ứng dụng vẫn có thể mở, nhưng chức năng bóc tách chưa sẵn sàng. "
+                            + "Vui lòng khởi động lại ứng dụng hoặc cài lại phiên bản mới nhất.");
+                    alert.show();
+                });
+                return null;
+            });
         } catch (Exception e) {
             logger.error("Failed to start application", e);
         }
@@ -62,5 +83,22 @@ public class App extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private void exposeUninstallUtilities() {
+        String appPath = System.getProperty("jpackage.app-path");
+        if (appPath == null || appPath.isBlank()) return;
+
+        try {
+            Path installRoot = Path.of(appPath).toAbsolutePath().getParent();
+            if (installRoot == null) return;
+            Path packagedApp = installRoot.resolve("app");
+            Files.copy(packagedApp.resolve("fast-uninstall.bat"),
+                    installRoot.resolve("Go-cai-dat-nhanh.bat"), StandardCopyOption.REPLACE_EXISTING);
+            Files.copy(packagedApp.resolve("uninstall-app.ps1"),
+                    installRoot.resolve("uninstall-app.ps1"), StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            logger.warn("Could not expose uninstall utilities in the installation directory", e);
+        }
     }
 }

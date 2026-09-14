@@ -2,6 +2,9 @@ package com.company.office.ui;
 
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
@@ -25,6 +28,9 @@ public class MainController {
     @FXML
     public void initialize() {
         updateStatusBadges();
+        Timeline statusRefresh = new Timeline(new KeyFrame(Duration.seconds(1), event -> updateStatusBadges()));
+        statusRefresh.setCycleCount(Timeline.INDEFINITE);
+        statusRefresh.play();
         showWorkbench();
     }
 

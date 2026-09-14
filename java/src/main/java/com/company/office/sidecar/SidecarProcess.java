@@ -7,7 +7,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class SidecarProcess {
     private static final Logger logger = LoggerFactory.getLogger(SidecarProcess.class);
@@ -46,6 +49,7 @@ public class SidecarProcess {
             pb.directory(workingDir);
             pb.environment().put("PYTHONUNBUFFERED", "1");
             pb.environment().put("PYMUPDF_MESSAGE", "fd:2");
+            isolatePythonRuntime(pb, resolvedPython);
 
             logger.info("Starting Python sidecar process: {} in workingDir: {}", scriptFile.getAbsolutePath(), workingDir.getAbsolutePath());
             process = pb.start();
@@ -73,12 +77,29 @@ public class SidecarProcess {
             if (pingRes.isSuccess()) {
                 logger.info("Python sidecar initialized and verified healthy: {}", pingRes.getData());
             } else {
-                logger.error("Python sidecar ping failed: {}", pingRes.getError());
+                throw new IllegalStateException("Python sidecar ping failed: " + pingRes.getError());
             }
         } catch (Exception e) {
             logger.error("Failed to start Python sidecar process", e);
             throw new RuntimeException("Could not launch Python Sidecar", e);
         }
+    }
+
+    private void isolatePythonRuntime(ProcessBuilder pb, String resolvedPython) {
+        File pythonDir = new File(resolvedPython).getAbsoluteFile().getParentFile();
+        if (pythonDir == null) return;
+
+        String currentPath = pb.environment().getOrDefault("PATH", "");
+        String javaRuntimeBin = new File(System.getProperty("java.home"), "bin")
+                .getAbsolutePath().toLowerCase(Locale.ROOT);
+        String filteredPath = Arrays.stream(currentPath.split(";"))
+                .map(String::trim)
+                .filter(entry -> !entry.isEmpty())
+                .filter(entry -> !new File(entry).getAbsolutePath().toLowerCase(Locale.ROOT)
+                        .equals(javaRuntimeBin))
+                .collect(Collectors.joining(";"));
+        pb.environment().put("PATH", pythonDir.getAbsolutePath()
+                + (filteredPath.isEmpty() ? "" : ";" + filteredPath));
     }
 
     private File resolveScriptFile(String path) {

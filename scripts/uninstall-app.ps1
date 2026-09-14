@@ -65,6 +65,7 @@ if ($productCode) {
 
 # Dọn dẹp thư mục cài đặt nếu còn sót
 $installDirs = @(
+    "$env:LOCALAPPDATA\$appName",
     "$env:LOCALAPPDATA\Programs\$appName",
     "$env:ProgramFiles\$appName",
     "$env:ProgramFiles(x86)\$appName"

@@ -1,5 +1,5 @@
 param(
-    [string]$Version = "1.0.4",
+    [string]$Version = "1.0.5",
     [string]$WixDir = "$PSScriptRoot\..\java\.tools\wix314"
 )
 
@@ -62,6 +62,20 @@ if (-not (Test-Path $iconPath)) {
 $runtimeDir = Join-Path $inputDir "python-runtime"
 $null = robocopy $pythonRoot $runtimeDir /E /XD "Doc" "include" "libs" "Scripts" "__pycache__" ".pytest_cache" /XF "*.pyc" "*.pyo"
 if ($LASTEXITCODE -ge 8) { throw "Copying Python runtime failed with robocopy exit code $LASTEXITCODE" }
+
+# Python native OCR dependencies require a newer MSVC runtime than the Java
+# runtime bundled by jpackage. App-local deployment prevents Windows from
+# resolving MSVCP140.dll from Java's runtime\bin when Java launches Python.
+$msvcRuntimeFiles = @("MSVCP140.dll", "MSVCP140_1.dll", "MSVCP140_2.dll", "CONCRT140.dll")
+foreach ($dllName in $msvcRuntimeFiles) {
+    $systemDll = Join-Path $env:SystemRoot "System32\$dllName"
+    if (Test-Path $systemDll) {
+        Copy-Item -LiteralPath $systemDll -Destination $runtimeDir -Force
+    }
+}
+if (-not (Test-Path (Join-Path $runtimeDir "MSVCP140.dll"))) {
+    throw "MSVCP140.dll is required for the bundled Python OCR runtime"
+}
 
 # Slim down python runtime to remove bloat, drastically speeding up MSI install/uninstall
 Write-Host "Slimming Python runtime for fast installation & uninstallation..."
