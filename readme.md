@@ -14,7 +14,7 @@ trên máy; ứng dụng không yêu cầu gửi tài liệu lên dịch vụ đ
 SHA-256 của bản v1.0.7:
 
 ```text
-Được cập nhật sau khi build bản v1.0.7.
+E98D8E3770DCE493AF214EE4369DF9D8FA5D7D15E42DF73457E207589D0BF2AA
 ```
 
 Ứng dụng chưa ký chứng thư số. Nếu Windows SmartScreen cảnh báo, chọn
